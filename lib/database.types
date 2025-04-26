@@ -1,0 +1,111 @@
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
+export interface Database {
+  public: {
+    Tables: {
+      user_profiles: {
+        Row: {
+          id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+          streak_count: number;
+          streak_last_active: string | null;
+          weekly_goal_hours: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          streak_count?: number;
+          streak_last_active?: string | null;
+          weekly_goal_hours?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          streak_count?: number;
+          streak_last_active?: string | null;
+          weekly_goal_hours?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      case_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          case_type: string;
+          case_title: string;
+          duration_minutes: number;
+          completed: boolean;
+          performance_rating: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          case_type: string;
+          case_title: string;
+          duration_minutes: number;
+          completed?: boolean;
+          performance_rating?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          case_type?: string;
+          case_title?: string;
+          duration_minutes?: number;
+          completed?: boolean;
+          performance_rating?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      skill_assessments: {
+        Row: {
+          id: string;
+          user_id: string;
+          session_id: string;
+          math_score: number | null;
+          structure_score: number | null;
+          creativity_score: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          session_id: string;
+          math_score?: number | null;
+          structure_score?: number | null;
+          creativity_score?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          session_id?: string;
+          math_score?: number | null;
+          structure_score?: number | null;
+          creativity_score?: number | null;
+          created_at?: string;
+        };
+      };
+    };
+  };
+}
+
+export type UserProfile = Database["public"]["Tables"]["user_profiles"]["Row"];
+export type CaseSession = Database["public"]["Tables"]["case_sessions"]["Row"];
+export type SkillAssessment = Database["public"]["Tables"]["skill_assessments"]["Row"];

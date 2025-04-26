@@ -1,0 +1,301 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base colors */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    /* Card and UI elements */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary brand colors */
+    --primary: 252 56% 57%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary UI elements */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Muted elements */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent elements */
+    --accent: 252 56% 96%;
+    --accent-foreground: 252 56% 57%;
+
+    /* Destructive elements */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders and inputs */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 252 56% 57%;
+
+    /* Status colors */
+    --success: 142 72% 29%;
+    --success-light: 142 76% 95%;
+    --warning: 38 92% 50%;
+    --warning-light: 38 92% 95%;
+    --info: 224 76% 48%;
+    --info-light: 224 76% 95%;
+
+    /* AI colors */
+    --ai: 252 56% 57%;
+    --ai-light: 252 56% 96%;
+
+    /* User colors */
+    --user: 224 76% 48%;
+    --user-light: 224 76% 95%;
+
+    /* Timer colors */
+    --timer-normal: 142 72% 29%;
+    --timer-warning: 38 92% 50%;
+    --timer-danger: 0 84% 60%;
+
+    /* Border radius */
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Base colors */
+    --background: 222 47% 5%;
+    --foreground: 210 40% 98%;
+
+    /* Card and UI elements */
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary brand colors */
+    --primary: 252 56% 57%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary UI elements */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted elements */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Accent elements */
+    --accent: 252 56% 20%;
+    --accent-foreground: 252 56% 57%;
+
+    /* Destructive elements */
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders and inputs */
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 252 56% 57%;
+
+    /* Status colors */
+    --success: 142 72% 29%;
+    --success-dark: 142 76% 15%;
+    --warning: 38 92% 50%;
+    --warning-dark: 38 92% 15%;
+    --info: 224 76% 48%;
+    --info-dark: 224 76% 15%;
+
+    /* AI colors */
+    --ai: 252 56% 57%;
+    --ai-dark: 252 56% 20%;
+
+    /* User colors */
+    --user: 224 76% 48%;
+    --user-dark: 224 76% 15%;
+
+    /* Timer colors */
+    --timer-normal: 142 72% 29%;
+    --timer-warning: 38 92% 50%;
+    --timer-danger: 0 63% 31%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Typography */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-sans font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Glass effect */
+  .glass {
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-700/20;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-indigo-500;
+  }
+
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-300;
+  }
+
+  .card-hover:hover {
+    @apply translate-y-[-4px] shadow-lg shadow-primary/10 dark:shadow-primary/5;
+  }
+
+  /* Message bubbles */
+  .message-bubble-ai {
+    @apply bg-ai-light dark:bg-ai-dark text-slate-800 dark:text-slate-200 rounded-2xl rounded-tl-sm;
+  }
+
+  .message-bubble-user {
+    @apply bg-user-light dark:bg-user-dark text-slate-800 dark:text-slate-200 rounded-2xl rounded-tr-sm;
+  }
+}
+
+@layer utilities {
+  /* Animated pulse for timer warning */
+  @keyframes pulse-warning {
+    0%,
+    100% {
+      @apply text-warning;
+    }
+    50% {
+      @apply text-warning/70;
+    }
+  }
+
+  .animate-pulse-warning {
+    animation: pulse-warning 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Animatedd pulse for timer danger */
+  @keyframes pulse-danger {
+    0%,
+    100% {
+      @apply text-destructive;
+    }
+    50% {
+      @apply text-destructive/70;
+    }
+  }
+
+  .animate-pulse-danger {
+    animation: pulse-danger 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Voice waveform animation */
+  @keyframes waveform {
+    0%,
+    100% {
+      transform: scaleY(0.5);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  .waveform-bar {
+    @apply bg-primary;
+    animation: waveform 1s ease-in-out infinite;
+    animation-delay: calc(var(--index) * 0.1s);
+  }
+
+  /* Slide animations */
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .slide-in-right {
+    animation: slide-in-right 0.3s ease-out forwards;
+  }
+
+  @keyframes slide-out-right {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  .slide-out-right {
+    animation: slide-out-right 0.3s ease-in forwards;
+  }
+
+  @keyframes slide-in-bottom {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .slide-in-bottom {
+    animation: slide-in-bottom 0.3s ease-out forwards;
+  }
+
+  @keyframes slide-out-bottom {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  .slide-out-bottom {
+    animation: slide-out-bottom 0.3s ease-in forwards;
+  }
+
+  /* Focus styles for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-secondary rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50;
+  }
+
+  /* Tooltip styles */
+  .tooltip {
+    @apply invisible absolute;
+  }
+
+  .has-tooltip:hover .tooltip {
+    @apply visible z-50;
+  }
+}

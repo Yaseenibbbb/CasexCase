@@ -58,7 +58,7 @@
     /* Timer colors */
     --timer-normal: 142 72% 29%;
     --timer-warning: 38 92% 50%;
-    --timer-danger: 0 84% 60%;
+    --timer-danger: 0 63% 31%;
 
     /* Border radius */
     --radius: 0.75rem;
@@ -122,9 +122,6 @@
     --timer-danger: 0 63% 31%;
   }
 
-  * {
-    @apply border-border;
-  }
   body {
     @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;

@@ -176,10 +176,10 @@
   @keyframes pulse-warning {
     0%,
     100% {
-      @apply text-warning;
+      color: hsl(var(--warning));
     }
     50% {
-      @apply text-warning/70;
+      color: hsla(var(--warning) / 0.7);
     }
   }
 
@@ -187,14 +187,14 @@
     animation: pulse-warning 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Animatedd pulse for timer danger */
+  /* Animated pulse for timer danger */
   @keyframes pulse-danger {
     0%,
     100% {
-      @apply text-destructive;
+      color: hsl(var(--destructive));
     }
     50% {
-      @apply text-destructive/70;
+      color: hsla(var(--destructive) / 0.7);
     }
   }
 

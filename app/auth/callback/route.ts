@@ -10,10 +10,10 @@ export async function GET(request: Request) {
 
   if (code) {
     try {
-      const cookieStore = cookies()
+    const cookieStore = cookies()
       const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
       console.log("[AuthCallback] Exchanging code for session...")
-      await supabase.auth.exchangeCodeForSession(code)
+    await supabase.auth.exchangeCodeForSession(code)
       console.log("[AuthCallback] Code exchange successful.")
     } catch (error) {
       console.error("[AuthCallback] Error exchanging code:", error)

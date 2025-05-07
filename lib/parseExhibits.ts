@@ -4,6 +4,7 @@ import { z } from "zod";
 export type ExhibitKind = "pie" | "bar" | "line" | "table" | "image";
 
 export interface Exhibit {
+  id: number;
   title: string;
   type: ExhibitKind;
   data: unknown;         // Renderers will cast as needed
@@ -46,8 +47,15 @@ export function parseReply(raw: string): ParsedReply {
                   if (validationResult.success) {
                     // Explicitly check if data exists before pushing
                     if (validationResult.data.data !== undefined && validationResult.data.data !== null) {
-                         // Now TypeScript knows data exists, satisfying the Exhibit interface
-                        exhibits.push(validationResult.data as Exhibit);
+                         // Assign a unique ID *after* validation
+                        // Explicitly assign properties instead of spreading to satisfy TypeScript
+                        const exhibitWithId: Exhibit = {
+                            id: Date.now() + Math.random(), // Add unique ID
+                            title: validationResult.data.title,
+                            type: validationResult.data.type,
+                            data: validationResult.data.data // Assign the validated data
+                        };
+                        exhibits.push(exhibitWithId);
                     } else {
                         console.warn("Invalid exhibit structure: data field is missing or null", potentialJson);
                     }

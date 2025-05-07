@@ -228,10 +228,10 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-500 dark:text-slate-400">Score</span>
                     <span className="font-semibold text-slate-800 dark:text-white">
-                      {skillAssessment?.math_score || 75}%
+                      {skillAssessment?.math_score ?? 0}%
                     </span>
                   </div>
-                  <Progress value={skillAssessment?.math_score || 75} className="h-2 bg-slate-200 dark:bg-slate-700">
+                  <Progress value={skillAssessment?.math_score ?? 0} className="h-2 bg-slate-200 dark:bg-slate-700">
                     <div className="h-full bg-blue-500 dark:bg-blue-600 rounded-full" />
                   </Progress>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -253,13 +253,10 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-500 dark:text-slate-400">Score</span>
                     <span className="font-semibold text-slate-800 dark:text-white">
-                      {skillAssessment?.structure_score || 80}%
+                      {skillAssessment?.structure_score ?? 0}%
                     </span>
                   </div>
-                  <Progress
-                    value={skillAssessment?.structure_score || 80}
-                    className="h-2 bg-slate-200 dark:bg-slate-700"
-                  >
+                  <Progress value={skillAssessment?.structure_score ?? 0} className="h-2 bg-slate-200 dark:bg-slate-700">
                     <div className="h-full bg-purple-500 dark:bg-purple-600 rounded-full" />
                   </Progress>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -281,13 +278,10 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-500 dark:text-slate-400">Score</span>
                     <span className="font-semibold text-slate-800 dark:text-white">
-                      {skillAssessment?.creativity_score || 70}%
+                      {skillAssessment?.creativity_score ?? 0}%
                     </span>
                   </div>
-                  <Progress
-                    value={skillAssessment?.creativity_score || 70}
-                    className="h-2 bg-slate-200 dark:bg-slate-700"
-                  >
+                  <Progress value={skillAssessment?.creativity_score ?? 0} className="h-2 bg-slate-200 dark:bg-slate-700">
                     <div className="h-full bg-green-500 dark:bg-green-600 rounded-full" />
                   </Progress>
                   <p className="text-xs text-slate-500 dark:text-slate-400">

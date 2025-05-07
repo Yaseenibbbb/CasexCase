@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,26 +8,30 @@ import { useAuth } from '@/context/auth-context';
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger,
-  SidebarSeparator
-} from '@/components/ui/sidebar';
-import {
   LayoutDashboard,
   MessageSquare,
   BookOpenCheck,
   LogOut,
   Workflow,
+  PanelLeft
 } from 'lucide-react';
+import MainDashboardHeader from '@/components/navigation/MainDashboardHeader';
+import { cn } from '@/lib/utils';
 import DashboardNavbar from '@/components/navigation/DashboardNavbar';
-import { AuthProvider } from '@/context/auth-context';
+import TopNavbar from '@/components/navigation/TopNavbar';
+
+const MiniBar = ({ active }: { active: boolean }) => {
+  if (!active) return null;
+  return (
+    <span
+      className="absolute inset-y-0 left-0 w-1 bg-[#7857f7] rounded-r-full"
+      aria-hidden="true"
+    />
+  );
+};
+
+const EXPANDED_WIDTH = "w-60";
+const COLLAPSED_WIDTH = "w-16";
 
 export default function DashboardLayout({
   children,
@@ -37,43 +41,67 @@ export default function DashboardLayout({
   const { user, isLoading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(true);
+  
+  // Update sidebar state based on localStorage on initial load
+  useEffect(() => {
+    setMounted(true);
+    
+    // Restore sidebar state from localStorage
+    const savedState = localStorage.getItem('sidebarOpen');
+    if (savedState !== null) {
+      setOpen(savedState === 'true');
+    }
+    
+    // Handle redirect if no user after loading
+    if (!isLoading && !user) {
+      router.push('/');
+    }
+  }, [isLoading, user, router]);
+  
+  // Listen for sidebar toggle events from TopNavbar
+  useEffect(() => {
+    const handleSidebarToggle = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      setOpen(customEvent.detail.isOpen);
+    };
+    
+    window.addEventListener('sidebar-toggle', handleSidebarToggle);
+    
+    return () => {
+      window.removeEventListener('sidebar-toggle', handleSidebarToggle);
+    };
+  }, []);
 
-  console.log(`[DashboardLayout] Rendering - isLoading: ${isLoading}, user: ${!!user}`);
-
-  if (isLoading) {
-    console.log("[DashboardLayout] Showing loading spinner");
+  console.log(`[DashboardLayout] Rendering - isLoading: ${isLoading}, user: ${!!user}, mounted: ${mounted}`);
+  
+  // Render same skeleton UI for both server and client initial render
+  if (!mounted || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    console.warn("[DashboardLayout] Rendering with !isLoading but !user. This shouldn't happen if middleware is correct. Check AuthProvider state.");
-  }
-
-  // --- Remove TEMPORARY SIMPLIFICATION ---
-  /*
-  return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <AuthProvider>
-        <div>
-          <h1>Dashboard Layout (Simplified)</h1>
-          {isLoading && <p>Auth Loading...</p>}
-          {user && <p>User: {user.email}</p>}
-          {!isLoading && !user && <p>No user found after load.</p>}
-          <hr />
-          { {children} } 
+      <div className="flex min-h-screen w-full bg-muted/40 dark:bg-slate-950">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
         </div>
-      </AuthProvider>
-      <Toaster />
-    </ThemeProvider>
-  )
-  */
-  // --- END TEMPORARY SIMPLIFICATION ---
+      </div>
+    );
+  }
 
-  // --- Restore ORIGINAL LAYOUT --- 
+  // Only after mounting and loading is complete, check for user
+  if (!user) {
+    return (
+      <div className="flex min-h-screen w-full bg-muted/40 dark:bg-slate-950">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Session Expired</h2>
+            <p className="mb-4">Please log in again to continue.</p>
+            <Link href="/" className="text-primary underline">Go to Login</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard#practice', label: 'Case Practice', icon: Workflow },
@@ -84,78 +112,91 @@ export default function DashboardLayout({
   console.log("[DashboardLayout] Rendering main layout content");
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-muted/40 dark:bg-slate-950">
-          <Sidebar>
-            <SidebarHeader>
-                 <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-lg">
-                    <Image
-                      src="/logo.png"
-                      alt="CaseByCase Logo"
-                      width={100}
-                      height={24}
-                      priority
-                      className="group-data-[collapsible=icon]:hidden"
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="dark" 
+      enableSystem
+    >
+      <div className="flex min-h-screen w-full bg-white dark:bg-[#121420]">
+        <TopNavbar />
+        
+        <aside 
+          className={cn(
+            "fixed left-0 top-16 bottom-0 flex flex-col border-r bg-white dark:bg-[#121420] border-gray-200 dark:border-gray-800 transition-[width] duration-200 ease-in-out z-20",
+            open ? EXPANDED_WIDTH : COLLAPSED_WIDTH
+          )}
+        >
+          <nav className="flex-1 overflow-y-auto py-4">
+            {navItems.map(({ href, label, icon: Icon }) => {
+              const active = pathname === href;
+              return (
+                <Link key={href} href={href} className="group relative block mx-2 my-1">
+                  <MiniBar active={active} />
+                  <span
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200",
+                      active
+                        ? "bg-[#7857f7]/10 text-[#7857f7]"
+                        : "text-gray-600 dark:text-gray-400 hover:text-[#121420] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-5 w-5 flex-shrink-0 transition-colors",
+                        active ? "text-[#7857f7]" : "text-gray-500 dark:text-gray-400 group-hover:text-[#7857f7]"
+                      )}
                     />
-                    <Image
-                      src="/logo-icon.png"
-                      alt="CaseByCase Icon"
-                      width={24}
-                      height={24}
-                      className="hidden group-data-[collapsible=icon]:block"
-                    />
-                 </Link>
-                 <SidebarTrigger />
-            </SidebarHeader>
-            <SidebarContent>
-                 <SidebarMenu>
-                   {navItems.map((item) => (
-                     <SidebarMenuItem key={item.href}>
-                       <Link href={item.href} passHref legacyBehavior>
-                          <SidebarMenuButton 
-                             asChild 
-                             variant="default" 
-                             tooltip={item.label} 
-                             isActive={pathname === item.href || (item.href.includes('#') && pathname === '/dashboard')}
-                          >
-                            <a>
-                               <item.icon />
-                               <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                            </a>
-                          </SidebarMenuButton>
-                       </Link>
-                     </SidebarMenuItem>
-                   ))}
-                 </SidebarMenu>
-            </SidebarContent>
-            <SidebarSeparator />
-            <SidebarFooter>
-                 <SidebarMenu>
-                    <SidebarMenuItem>
-                       <SidebarMenuButton 
-                          variant="default" 
-                          tooltip="Logout" 
-                          onClick={() => signOut()} 
-                       >
-                          <LogOut />
-                         <span className="group-data-[collapsible=icon]:hidden">Logout</span>
-                       </SidebarMenuButton>
-                    </SidebarMenuItem>
-                 </SidebarMenu>
-            </SidebarFooter>
-          </Sidebar>
-          <div className="flex flex-1 flex-col sm:pl-16">
-            <DashboardNavbar />
-            <main className="flex-1 overflow-y-auto pt-16 px-4 sm:px-6 py-6">
-              {/* Restore original children rendering */} 
-              {user ? children : <p>Loading user data...</p>} 
-            </main>
+                    {open && (
+                      <span
+                        className={cn(
+                          "truncate transition-opacity delay-75",
+                          open ? "opacity-100" : "opacity-0"
+                        )}
+                      >
+                        {label}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="mt-auto border-t border-gray-200 dark:border-gray-800 p-4">
+            <button
+              onClick={() => signOut()}
+              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hover:text-[#121420] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:ring-2 transition-all duration-200"
+            >
+              <LogOut className="h-5 w-5 flex-shrink-0" />
+              {open && (
+                <span 
+                  className={cn(
+                    "truncate transition-opacity delay-75",
+                    open ? "opacity-100" : "opacity-0"
+                  )}>
+                    Logout
+                  </span>
+              )}
+            </button>
           </div>
+        </aside>
+        <div 
+          className={cn(
+            "flex flex-1 flex-col transition-all duration-200 pt-16",
+            open ? "ml-60" : "ml-16"
+          )}
+        >
+          {!pathname.startsWith('/interview/') && <DashboardNavbar />}
+          
+          <main className={cn(
+            "flex-1 overflow-y-auto px-4 sm:px-6 py-6",
+            !pathname.startsWith('/interview/') && "pt-4"
+          )}>
+            {children}
+          </main>
         </div>
-      </SidebarProvider>
+      </div>
       <Toaster />
     </ThemeProvider>
   )
-  // --- END ORIGINAL LAYOUT ---
 }

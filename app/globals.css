@@ -5,125 +5,154 @@
 @layer base {
   :root {
     /* Base colors */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
 
     /* Card and UI elements */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 224 71.4% 4.1%;
 
     /* Primary brand colors */
-    --primary: 252 56% 57%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 262 84% 60%;
+    --primary-foreground: 210 20% 98%;
 
     /* Secondary UI elements */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 222.4 7.1% 3.1%;
 
     /* Muted elements */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
 
     /* Accent elements */
-    --accent: 252 56% 96%;
-    --accent-foreground: 252 56% 57%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 222.4 7.1% 3.1%;
 
     /* Destructive elements */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
 
     /* Borders and inputs */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 252 56% 57%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 262 84% 60%;
 
     /* Status colors */
-    --success: 142 72% 29%;
-    --success-light: 142 76% 95%;
-    --warning: 38 92% 50%;
-    --warning-light: 38 92% 95%;
-    --info: 224 76% 48%;
-    --info-light: 224 76% 95%;
+    --success: 142 71% 45%;
+    --success-light: 142 71% 95%;
+    --success-dark: 142 71% 20%;
+    --warning: 45 93% 50%;
+    --warning-light: 45 93% 95%;
+    --warning-dark: 45 93% 25%;
+    --info: 210 95% 55%;
+    --info-light: 210 95% 95%;
+    --info-dark: 210 95% 25%;
 
     /* AI colors */
-    --ai: 252 56% 57%;
-    --ai-light: 252 56% 96%;
+    --ai: 262 84% 60%;
+    --ai-light: 262 84% 96%;
+    --ai-dark: 262 84% 25%;
 
     /* User colors */
-    --user: 224 76% 48%;
-    --user-light: 224 76% 95%;
+    --user: 210 95% 55%;
+    --user-light: 210 95% 96%;
+    --user-dark: 210 95% 25%;
 
     /* Timer colors */
-    --timer-normal: 142 72% 29%;
-    --timer-warning: 38 92% 50%;
-    --timer-danger: 0 63% 31%;
+    --timer-normal: 142 71% 45%;
+    --timer-warning: 45 93% 50%;
+    --timer-danger: 0 84% 60%;
 
     /* Border radius */
     --radius: 0.75rem;
+
+    /* Sidebar specific colors (if needed, else can remove) */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 224 71.4% 4.1%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-accent: 220 14.3% 95.9%;
+    --sidebar-accent-foreground: 222.4 7.1% 3.1%;
+    --sidebar-ring: 262 84% 60%;
   }
 
   .dark {
     /* Base colors */
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
+    --background: 223 30% 9%;
+    --foreground: 210 20% 98%;
 
     /* Card and UI elements */
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+    --card: 226 34% 16%;
+    --card-foreground: 210 20% 98%;
+    --popover: 226 34% 16%;
+    --popover-foreground: 210 20% 98%;
 
     /* Primary brand colors */
-    --primary: 252 56% 57%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 262 84% 65%;
+    --primary-foreground: 210 20% 98%;
 
     /* Secondary UI elements */
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 226 34% 16%;
+    --secondary-foreground: 210 20% 98%;
 
     /* Muted elements */
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 226 24% 20%;
+    --muted-foreground: 215 14% 65%;
 
     /* Accent elements */
-    --accent: 252 56% 20%;
-    --accent-foreground: 252 56% 57%;
+    --accent: 226 24% 20%;
+    --accent-foreground: 210 20% 98%;
 
     /* Destructive elements */
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 210 20% 98%;
 
     /* Borders and inputs */
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 252 56% 57%;
+    --border: 226 20% 22%;
+    --input: 226 20% 22%;
+    --ring: 262 84% 65%;
 
     /* Status colors */
-    --success: 142 72% 29%;
-    --success-dark: 142 76% 15%;
-    --warning: 38 92% 50%;
-    --warning-dark: 38 92% 15%;
-    --info: 224 76% 48%;
-    --info-dark: 224 76% 15%;
+    --success: 142 61% 45%;
+    --success-light: 142 61% 15%;
+    --success-dark: 142 61% 75%;
+    --warning: 45 83% 50%;
+    --warning-light: 45 83% 18%;
+    --warning-dark: 45 83% 75%;
+    --info: 210 85% 55%;
+    --info-light: 210 85% 18%;
+    --info-dark: 210 85% 75%;
 
     /* AI colors */
-    --ai: 252 56% 57%;
-    --ai-dark: 252 56% 20%;
+    --ai: 262 84% 65%;
+    --ai-light: 262 84% 18%;
+    --ai-dark: 262 84% 75%;
 
     /* User colors */
-    --user: 224 76% 48%;
-    --user-dark: 224 76% 15%;
+    --user: 210 85% 55%;
+    --user-light: 210 85% 18%;
+    --user-dark: 210 85% 75%;
 
     /* Timer colors */
-    --timer-normal: 142 72% 29%;
-    --timer-warning: 38 92% 50%;
-    --timer-danger: 0 63% 31%;
+    --timer-normal: 142 61% 45%;
+    --timer-warning: 45 83% 50%;
+    --timer-danger: 0 63% 50%;
+
+    /* Sidebar specific colors (if needed) */
+    --sidebar: 223 30% 9%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-border: 226 20% 22%;
+    --sidebar-accent: 226 24% 20%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-ring: 262 84% 65%;
   }
 
+  * {
+    @apply border-border;
+  }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-surfaceLight text-gray-900 dark:bg-surfaceDark dark:text-slate-200;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -173,10 +202,10 @@
   @keyframes pulse-warning {
     0%,
     100% {
-      color: hsl(var(--warning));
+      @apply text-warning;
     }
     50% {
-      color: hsla(var(--warning) / 0.7);
+      @apply text-warning/70;
     }
   }
 
@@ -184,14 +213,14 @@
     animation: pulse-warning 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Animated pulse for timer danger */
+  /* Animatedd pulse for timer danger */
   @keyframes pulse-danger {
     0%,
     100% {
-      color: hsl(var(--destructive));
+      @apply text-destructive;
     }
     50% {
-      color: hsla(var(--destructive) / 0.7);
+      @apply text-destructive/70;
     }
   }
 
@@ -295,4 +324,11 @@
   .has-tooltip:hover .tooltip {
     @apply visible z-50;
   }
+}
+
+/* Add updated card-grid styles */
+.card-grid {
+  @apply grid gap-6 
+          sm:grid-cols-2 lg:grid-cols-3 
+          transition-[grid-template-columns] duration-200;
 }

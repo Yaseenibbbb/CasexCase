@@ -3,14 +3,15 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { LayoutTemplate, GitBranch, BarChart2, PieChart, DollarSign } from "lucide-react"
+import { LayoutTemplate, GitBranch, BarChart2, PieChart, DollarSign, X } from "lucide-react"
 import { FrameworkModal } from "./FrameworkModal"
 
 interface FrameworkCanvasProps {
   value: string
+  onClose?: () => void
 }
 
-export function FrameworkCanvas({ value }: FrameworkCanvasProps) {
+export function FrameworkCanvas({ value, onClose }: FrameworkCanvasProps) {
   const [showPreview, setShowPreview] = useState(false)
   const [modalFramework, setModalFramework] = useState<any | null>(null)
 
@@ -144,8 +145,20 @@ export function FrameworkCanvas({ value }: FrameworkCanvasProps) {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <Tabs defaultValue="notes" className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col relative">
+      {onClose && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose} 
+          className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
+          aria-label="Close Notes Panel"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+
+      <Tabs defaultValue="notes" className="flex-1 flex flex-col p-4">
         <div className="flex justify-between items-center mb-4">
           <TabsList className="bg-slate-100/80 dark:bg-slate-800/50 p-1 rounded-xl">
             <TabsTrigger
@@ -175,15 +188,15 @@ export function FrameworkCanvas({ value }: FrameworkCanvasProps) {
         <TabsContent value="notes" className="flex-1 mt-0">
           {showPreview ? (
             <div
-              className="min-h-[calc(40vh-150px)] bg-white dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800 overflow-y-auto prose prose-sm dark:prose-invert max-w-none"
+              className="min-h-[calc(100%-80px)] bg-white dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-800 overflow-y-auto prose prose-sm dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: markdownToHtml(value) }}
             />
           ) : (
             <textarea
               value={value}
               readOnly
-              placeholder="Select a framework to view its visualization..."
-              className="min-h-[calc(40vh-150px)] w-full resize-none p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 font-mono text-sm"
+              placeholder="Your notes appear here. Use Markdown for formatting."
+              className="min-h-[calc(100%-80px)] w-full resize-none p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 font-mono text-sm"
             />
           )}
         </TabsContent>

@@ -5,13 +5,14 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowRight, Calculator } from "lucide-react"
+import { ArrowRight, Calculator, X } from "lucide-react"
 
 interface CalculatorWidgetProps {
   onInsertResult: (result: string) => void
+  onClose: () => void
 }
 
-export function CalculatorWidget({ onInsertResult }: CalculatorWidgetProps) {
+export function CalculatorWidget({ onInsertResult, onClose }: CalculatorWidgetProps) {
   const [expression, setExpression] = useState("")
   const [result, setResult] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -22,8 +23,9 @@ export function CalculatorWidget({ onInsertResult }: CalculatorWidgetProps) {
       // Replace × with *, ÷ with /
       const sanitizedExpression = expression.replace(/×/g, "*").replace(/÷/g, "/")
 
-      // eslint-disable-next-line no-eval
-      const calculatedResult = eval(sanitizedExpression)
+      // Use Function constructor instead of eval for slightly safer evaluation
+      // eslint-disable-next-line no-new-func
+      const calculatedResult = new Function(`return ${sanitizedExpression}`)()
 
       if (isNaN(calculatedResult) || !isFinite(calculatedResult)) {
         throw new Error("Invalid calculation")
@@ -60,7 +62,17 @@ export function CalculatorWidget({ onInsertResult }: CalculatorWidgetProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+    <div className="relative bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={onClose} 
+        className="absolute top-2 right-2 h-6 w-6 rounded-full text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" 
+        aria-label="Close Calculator"
+      >
+        <X className="h-4 w-4" />
+      </Button>
+
       <div className="flex items-center gap-2 mb-3">
         <Calculator className="h-5 w-5 text-purple-500" />
         <h3 className="font-medium text-slate-800 dark:text-white">Calculator</h3>

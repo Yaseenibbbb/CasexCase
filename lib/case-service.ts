@@ -3,9 +3,13 @@ import type { CaseSession, SkillAssessment } from "./database.types"
 
 export const caseService = {
   // Get all case sessions for the current user
-  async getUserCaseSessions() {
+  async getUserCaseSessions(userId: string) {
     const supabase = getSupabaseBrowserClient()
-    const { data, error } = await supabase.from("case_sessions").select("*").order("created_at", { ascending: false })
+    const { data, error } = await supabase
+      .from("case_sessions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
 
     if (error) {
       console.error("Error fetching case sessions:", error)
@@ -22,7 +26,8 @@ export const caseService = {
       .from("case_sessions")
       .select(`
         *,
-        skill_assessment(*)
+        skill_assessment(*),
+        generated_case_data 
       `)
       .eq("id", sessionId)
       .single()
@@ -44,11 +49,11 @@ export const caseService = {
       const { data, error } = await supabase.from("case_sessions").insert(caseSession).select().single();
       console.log("[caseService] Insert & Select result - data:", data, "error:", error); // Log result
 
-      if (error) {
+    if (error) {
         console.error("[caseService] Error during insert/select case session:", error);
         return { data: null, error };
-      }
-      
+    }
+
       console.log("[caseService] Insert & Select successful.");
       return { data, error: null }; // Return the selected data (including ID)
 

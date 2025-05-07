@@ -1,14 +1,16 @@
 import type { Config } from "tailwindcss"
 import { fontFamily } from "tailwindcss/defaultTheme"
+import { nextui } from "@nextui-org/react"
 
 const config = {
-  darkMode: ["class"],
+  darkMode: "class",
   content: [
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
     "*.{js,ts,jsx,tsx,mdx}",
+    "./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}",
   ],
   prefix: "",
   theme: {
@@ -54,6 +56,16 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        brand: '#7357FF',
+        brandAlt: '#0C6BFF',
+        surfaceLight: '#FFFFFF',
+        surfaceDark: '#121827',
+        cardLight: '#F8F9FF',
+        cardDark: '#1A2138',
+        borderLight: '#E5E7EB',
+        borderDark: '#26324C',
+        accentGreen: '#22C55E',
+        accentAmber: '#F59E0B',
         success: {
           DEFAULT: "hsl(var(--success))",
           light: "hsl(var(--success-light))",
@@ -93,6 +105,19 @@ const config = {
       fontFamily: {
         sans: ["var(--font-outfit)", ...fontFamily.sans],
         mono: ["var(--font-jetbrains-mono)", ...fontFamily.mono],
+        display: ['Inter', 'ui-sans-serif', 'system-ui'],
+      },
+      transitionProperty: {
+        width: "width",
+        spacing: 'margin, padding',
+      },
+      boxShadow: {
+        card: '0 4px 30px rgba(0,0,0,.06)',
+        cardDark: '0 4px 30px rgba(0,0,0,.45)',
+      },
+      backgroundImage: {
+        'promo-light': 'linear-gradient(90deg,#d8dbff 0%,#f4e5ff 100%)',
+        'promo-dark':  'linear-gradient(90deg,#3e2c81 0%,#30215d 100%)',
       },
       keyframes: {
         "accordion-down": {
@@ -120,7 +145,10 @@ const config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    nextui()
+  ],
 } satisfies Config
 
 export default config

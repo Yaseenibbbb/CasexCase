@@ -84,38 +84,38 @@ export function ExhibitPanel({
                 {exhibit.type === "image" && exhibit.data && (
                   <div>
                     <img src={(exhibit.data as ImageData).url || "/placeholder.svg"} alt={(exhibit.data as ImageData).alt || exhibit.title} className="max-w-full h-auto rounded" />
-                  </div>
-                )}
+          </div>
+        )}
 
                 {exhibit.type === "table" && exhibit.data && (exhibit.data as TableData).headers && (exhibit.data as TableData).rows && (
-                  <div className="overflow-x-auto">
+          <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-sm">
-                      <thead>
+              <thead>
                         <tr className="bg-slate-100 dark:bg-slate-800">
                           {(exhibit.data as TableData).headers.map((header: string, i: number) => (
-                            <th
-                              key={i}
+                    <th
+                      key={i}
                               className="border border-slate-300 dark:border-slate-600 p-2 text-left font-medium text-slate-700 dark:text-slate-300"
-                            >
-                              {header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
                         {(exhibit.data as TableData).rows.map((row: string[], i: number) => (
                           <tr key={i} className="hover:bg-slate-100/50 dark:hover:bg-slate-700/50">
-                            {row.map((cell, j) => (
+                    {row.map((cell, j) => (
                               <td key={j} className="border border-slate-200 dark:border-slate-700 p-2 text-slate-700 dark:text-slate-300">
-                                {cell}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
                 {exhibit.type === "chart" && exhibit.data && (exhibit.data as ChartData).type && (exhibit.data as ChartData).data && (
                    <div className="w-full h-72" aria-label={`Chart: ${exhibit.title}`}>
@@ -200,10 +200,10 @@ export function ExhibitPanel({
                 {!['image', 'table', 'chart'].includes(exhibit.type) || !exhibit.data && (
                   <div className="text-slate-500 dark:text-slate-400">
                     Cannot display exhibit: Unknown type '{exhibit.type}' or missing data.
-                  </div>
-                )}
-              </div>
-            </div>
+          </div>
+        )}
+      </div>
+        </div>
           ))
         )}
       </div>

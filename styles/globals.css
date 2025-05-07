@@ -47,33 +47,46 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Direct color variables */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --text-primary: #1a202c;
+    --text-secondary: #4a5568;
+    --accent-color: #7857f7;
+    --border-color: #e2e8f0;
+    --card-bg: #ffffff;
+    --purple-primary: #7857f7;
+    --purple-light: rgba(120, 87, 247, 0.1);
+    --purple-dark: #6344e5;
   }
+
   .dark {
-    --background: 0 0% 3.9%;
+    --background: 240 10% 4%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+    --card: 240 10% 4%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 240 10% 4%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
     --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+    --secondary: 240 4% 16%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
+    --muted: 240 4% 16%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
+    --accent: 240 4% 16%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
     --ring: 0 0% 83.1%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
+    --sidebar-background: 240 10% 4%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -81,6 +94,18 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Direct color variables */
+    --bg-primary: #121420;
+    --bg-secondary: #1a1b2e;
+    --text-primary: #f8f9fa;
+    --text-secondary: #cbd5e0;
+    --accent-color: #7857f7;
+    --border-color: #2d3748;
+    --card-bg: #1e1d2d;
+    --purple-primary: #7857f7;
+    --purple-light: rgba(120, 87, 247, 0.2);
+    --purple-dark: #6344e5;
   }
 }
 
@@ -91,4 +116,60 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Add consistent styling for common elements */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-gray-900 dark:text-white;
+  }
+  
+  p {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+  
+  a {
+    @apply text-[#7857f7] hover:text-[#6344e5] transition-colors;
+  }
+  
+  /* Ensure all cards have consistent styling */
+  .card, [class*="card-"] {
+    @apply bg-white dark:bg-[#1e1d2d] border border-gray-200 dark:border-gray-800;
+  }
+}
+
+/* Main content adjustments for top navbar */
+.main-content {
+  margin-top: 64px; /* Match height of top bar */
+  padding: 20px;
+}
+
+.sidebar {
+  position: fixed;
+  top: 64px; /* Start below top bar */
+  height: calc(100vh - 64px);
+}
+
+/* Custom components for consistent styling */
+.purple-gradient {
+  @apply bg-gradient-to-r from-[#7857f7] to-[#6344e5];
+}
+
+.purple-text {
+  @apply text-[#7857f7];
+}
+
+.purple-bg-light {
+  @apply bg-[#7857f7]/10;
+}
+
+/* Level badges consistent styling */
+.badge-beginner {
+  @apply bg-green-100 text-green-700 dark:bg-green-800/30 dark:text-green-400;
+}
+
+.badge-intermediate {
+  @apply bg-blue-100 text-blue-700 dark:bg-blue-800/30 dark:text-blue-400;
+}
+
+.badge-advanced {
+  @apply bg-purple-100 text-purple-700 dark:bg-purple-800/30 dark:text-purple-400;
 }

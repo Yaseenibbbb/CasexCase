@@ -3,15 +3,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+  Navbar,
+  NavbarBrand,
+  NavbarContent,
+  NavbarItem,
+  Button,
+  Breadcrumbs,
+  BreadcrumbItem
+} from "@nextui-org/react";
 import { ArrowLeft } from 'lucide-react';
 import { CATEGORIZED_BEHAVIORAL_QUESTIONS } from '@/lib/data'; // To get category/question titles
 
@@ -64,44 +64,54 @@ export default function DashboardNavbar() {
   const breadcrumbItems = generateBreadcrumbs(pathname, params);
 
   return (
-    <nav className="fixed top-0 left-0 sm:left-14 right-0 z-40 h-16 px-4 sm:px-6 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md flex items-center gap-4">
-        {/* Back Button */}
-        <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => router.back()}
-            className="h-8 w-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex-shrink-0"
-            aria-label="Go back"
-        >
-            <ArrowLeft size={18} className="text-slate-600 dark:text-slate-400" />
-        </Button>
-
-        {/* Breadcrumbs */}
-        <Breadcrumb className="flex-grow overflow-hidden whitespace-nowrap">
-            <BreadcrumbList>
-                {breadcrumbItems.map((item, index) => (
-                    <React.Fragment key={item.href}>
-                        <BreadcrumbItem>
-                            {index === breadcrumbItems.length - 1 ? (
-                                <BreadcrumbPage className="font-medium text-slate-700 dark:text-slate-300 truncate">
-                                    {item.title}
-                                </BreadcrumbPage>
-                            ) : (
-                                <BreadcrumbLink asChild>
-                                    <Link href={item.href} className="hover:text-purple-600 transition-colors">
-                                        {item.title}
-                                    </Link>
-                                </BreadcrumbLink>
-                            )}
+    <Navbar
+        isBordered
+        isBlurred={false} // Set to false if you prefer the layout below to handle blur/opacity
+        maxWidth="full"
+        height="4rem" // Default is 4rem (h-16)
+        className="fixed top-0 z-40"
+        classNames={{
+            wrapper: "px-4 sm:px-6", // Adjust padding
+        }}
+    >
+        <NavbarContent justify="start">
+            {/* Back Button */}
+            <NavbarItem>
+                 <Button 
+                    isIconOnly 
+                    variant="light" 
+                    onPress={() => router.back()}
+                    aria-label="Go back"
+                    className="rounded-full"
+                >
+                    <ArrowLeft size={18} />
+                </Button>
+            </NavbarItem>
+           
+            {/* Breadcrumbs */}
+             <NavbarItem className="flex-grow overflow-hidden whitespace-nowrap">
+                <Breadcrumbs>
+                    {breadcrumbItems.map((item, index) => (
+                        <BreadcrumbItem 
+                            key={item.href}
+                            href={index === breadcrumbItems.length - 1 ? undefined : item.href}
+                            isCurrent={index === breadcrumbItems.length - 1}
+                            classNames={{
+                                item: "hover:text-primary transition-colors truncate",
+                                separator: "mx-1"
+                            }}
+                        >
+                            {item.title}
                         </BreadcrumbItem>
-                        {index < breadcrumbItems.length - 1 && <BreadcrumbSeparator />} 
-                    </React.Fragment>
-                ))}
-            </BreadcrumbList>
-        </Breadcrumb>
-        
-        {/* Placeholder for potential future actions/user menu */}
-        <div className="w-8"></div> 
-    </nav>
+                    ))}
+                </Breadcrumbs>
+            </NavbarItem>
+        </NavbarContent>
+
+        {/* Placeholder for right-side content if needed */}
+        <NavbarContent justify="end">
+            {/* Add User Profile/Actions here later */}
+        </NavbarContent>
+    </Navbar>
   );
 } 

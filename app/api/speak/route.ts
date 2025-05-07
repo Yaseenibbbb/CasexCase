@@ -1,57 +1,70 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ElevenLabsClient } from 'elevenlabs';
 
-// Validate environment variables
+// Ensure API key is set
 if (!process.env.ELEVENLABS_API_KEY) {
-  throw new Error("Missing ElevenLabs API key");
+  throw new Error('ELEVENLABS_API_KEY environment variable is not set.');
 }
 
 const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
-// Use a default voice ID (e.g., Rachel - find IDs on ElevenLabs website)
-const DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+// Define voice IDs (example)
+const CASSIDY_VOICE_ID = '56AoDkrOh6qfVPDXZ7Pt'; // Replace with your actual Cassidy voice ID if different
+const SAFE_DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; // Default voice like 'Rachel' or another standard one
 
-export async function POST(req: Request) {
+// REMOVED: Caching and voice fetching logic (getAndCacheVoiceIds)
+
+// --- API Route Handler ---
+export async function POST(req: NextRequest) {
+  console.log('[API_SPEAK] Request received');
   try {
-    const body = await req.json();
-    const text: string = body.text;
-    const voiceId: string = body.voiceId || DEFAULT_VOICE_ID;
+    // Revert back to using CASSIDY_VOICE_ID as default
+    const { text, voiceId = CASSIDY_VOICE_ID } = await req.json();
 
-    if (!text) {
-      return NextResponse.json({ error: 'Text is required' }, { status: 400 });
+    // Input validation
+    if (!text || typeof text !== 'string') {
+      console.error('[API_SPEAK_POST] Invalid input: text is missing or not a string');
+      return NextResponse.json({ error: 'Invalid input: text is required and must be a string.' }, { status: 400 });
+    }
+    if (typeof voiceId !== 'string') {
+      console.error('[API_SPEAK_POST] Invalid input: voiceId is not a string');
+      return NextResponse.json({ error: 'Invalid input: voiceId must be a string.' }, { status: 400 });
     }
 
-    console.log(`[API_SPEAK] Requesting audio for text: "${text.substring(0, 50)}..." Voice: ${voiceId}`);
+    console.log(`[API_SPEAK] Requesting audio for text: "${text.substring(0, 30)}..." Using Voice: ${voiceId}`);
 
-    const audioStream = await elevenlabs.generate({
+    const audio = await elevenlabs.generate({
       voice: voiceId,
+      model_id: "eleven_turbo_v2", // Specify Turbo model
       text: text,
-      model_id: "eleven_multilingual_v2", // Or your preferred model
-      stream: true,
-      // Optional parameters for voice settings can be added here
-      // voice_settings: {
-      //   stability: 0.5,
-      //   similarity_boost: 0.75,
-      // },
     });
 
-    console.log("[API_SPEAK] Received audio stream from ElevenLabs.");
+    if (!(audio instanceof ReadableStream)) {
+      console.error('[API_SPEAK_POST] ElevenLabs did not return a readable stream.');
+      return NextResponse.json({ error: 'Failed to generate audio stream.' }, { status: 500 });
+    }
 
-    // Return the audio stream directly
-    // Set appropriate headers for audio streaming
+    // Set headers for audio streaming
     const headers = new Headers();
-    headers.set('Content-Type', 'audio/mpeg'); // Adjust mime type if necessary
-    headers.set('Transfer-Encoding', 'chunked');
+    headers.set('Content-Type', 'audio/mpeg');
+    // headers.set('Transfer-Encoding', 'chunked'); // Not needed with ReadableStream response
 
-    return new NextResponse(audioStream as any, { status: 200, headers });
+    console.log('[API_SPEAK] Successfully generated audio stream. Sending response.');
+    return new NextResponse(audio, { status: 200, headers });
 
   } catch (error: any) {
-    console.error('[API_SPEAK_POST]', error);
-    // Attempt to parse ElevenLabs specific errors if possible
-    const errorMessage = error.message || 'Internal Server Error';
-    const errorStatus = error.status || 500;
-    return NextResponse.json({ error: `ElevenLabs Error: ${errorMessage}` }, { status: errorStatus });
+    // Log the full error object for detailed debugging
+    console.error('[API_SPEAK_POST] Full Error Object:', error);
+
+    // Provide a more generic error message to the client
+    return NextResponse.json(
+      {
+        error: 'Failed to process audio request.',
+        details: error.message || 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 } 

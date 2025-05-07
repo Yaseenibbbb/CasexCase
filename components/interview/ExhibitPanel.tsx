@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { X, Pin, Download, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, Card, CardHeader, CardBody, CardFooter, Divider, Image as NextUIImage, Tooltip } from "@nextui-org/react"
 import {
   ResponsiveContainer,
   LineChart,
@@ -16,13 +16,14 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
 } from "recharts"
+import type { Exhibit } from "@/lib/parseExhibits"
 
 interface ExhibitPanelProps {
-  exhibits: any[]
-  currentExhibit: number
+  exhibits: Exhibit[]
+  currentIndex: number
   onClose: () => void
   onPin: () => void
   isPinned: boolean
@@ -31,11 +32,11 @@ interface ExhibitPanelProps {
 }
 
 // Define some colors for charts
-const COLORS = ["#8b5cf6", "#6366f1", "#ec4899", "#f59e0b", "#10b981"];
+const COLORS = ["#8b5cf6", "#6366f1", "#ec4899", "#f59e0b", "#10b981"]
 
 export function ExhibitPanel({
   exhibits,
-  currentExhibit,
+  currentIndex,
   onClose,
   onPin,
   isPinned,
@@ -43,145 +44,104 @@ export function ExhibitPanel({
   onPrev,
 }: ExhibitPanelProps) {
   const [zoomLevel, setZoomLevel] = useState(1)
-  const exhibit = exhibits[currentExhibit]
+  
+  const exhibit = exhibits && exhibits.length > currentIndex ? exhibits[currentIndex] : null;
 
-  const handleZoomIn = () => {
-    setZoomLevel((prev) => Math.min(prev + 0.25, 2))
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.25, 2));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
+
+  // Simplify data formatting for charts - assumes exhibit.data is like [{label:"X", value: Y}]
+  let formattedChartData: { name: string; value: number }[] | null = null;
+  if (exhibit && ('pie' === exhibit.type || 'bar' === exhibit.type || 'line' === exhibit.type) && Array.isArray(exhibit.data)) {
+      formattedChartData = exhibit.data
+         .filter(item => typeof item === 'object' && item !== null && item.hasOwnProperty('label') && item.hasOwnProperty('value'))
+         .map((item: any) => ({
+             name: item.label,
+             value: Number(item.value) || 0, 
+         }));
   }
 
-  const handleZoomOut = () => {
-    setZoomLevel((prev) => Math.max(prev - 0.25, 0.5))
+  // --- Table Data Formatting ---
+  let tableHeaders: string[] = [];
+  let tableRows: string[][] = [];
+  if (exhibit && exhibit.type === 'table' && typeof exhibit.data === 'object' && exhibit.data !== null && 'headers' in exhibit.data && 'rows' in exhibit.data && Array.isArray(exhibit.data.headers) && Array.isArray(exhibit.data.rows)) {
+     tableHeaders = exhibit.data.headers as string[];
+     tableRows = exhibit.data.rows as string[][];
   }
 
-  const renderChart = () => {
-    if (!exhibit || exhibit.type !== 'chart' || !exhibit.data || !exhibit.chartType) {
-      return <p className="text-slate-500 dark:text-slate-400">Chart data is missing or invalid.</p>;
-    }
+  // --- Image URL Check ---
+  const imageUrl = (exhibit && exhibit.type === 'image' && typeof exhibit.data === 'string') ? exhibit.data : null;
 
-    const chartData = exhibit.data.datasets[0]?.data; // Assuming simple structure for now
-    const labels = exhibit.data.labels;
-    const formattedData = labels.map((label: string, index: number) => ({
-      name: label,
-      value: chartData[index],
-    }));
-
+  if (!exhibit) {
     return (
-      <ResponsiveContainer width="100%" height={300}>
-        <>
-          {exhibit.chartType === 'line' && (
-            <LineChart data={formattedData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" />
-              <XAxis dataKey="name" stroke="#64748b" className="dark:stroke-slate-400 text-xs" />
-              <YAxis stroke="#64748b" className="dark:stroke-slate-400 text-xs" />
-              <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }} itemStyle={{ color: '#334155' }} wrapperClassName="text-xs dark:!bg-slate-800/80 dark:!border-slate-700 dark:[&_*]:!text-slate-300" />
-              <Legend wrapperStyle={{ fontSize: '0.75rem'}} />
-              <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name={exhibit.data.datasets[0]?.label || 'Value'} />
-            </LineChart>
-          )}
-          {exhibit.chartType === 'bar' && (
-            <BarChart data={formattedData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" />
-              <XAxis dataKey="name" stroke="#64748b" className="dark:stroke-slate-400 text-xs" />
-              <YAxis stroke="#64748b" className="dark:stroke-slate-400 text-xs" />
-              <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }} itemStyle={{ color: '#334155' }} wrapperClassName="text-xs dark:!bg-slate-800/80 dark:!border-slate-700 dark:[&_*]:!text-slate-300"/>
-              <Legend wrapperStyle={{ fontSize: '0.75rem'}} />
-              <Bar dataKey="value" name={exhibit.data.datasets[0]?.label || 'Value'} >
-                {formattedData.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          )}
-           {exhibit.chartType === 'pie' && (
-            <PieChart>
-              <Tooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }} itemStyle={{ color: '#334155' }} wrapperClassName="text-xs dark:!bg-slate-800/80 dark:!border-slate-700 dark:[&_*]:!text-slate-300"/>
-              <Legend wrapperStyle={{ fontSize: '0.75rem'}} />
-              <Pie data={formattedData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} >
-                {formattedData.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-            </PieChart>
-          )}
-        </>
-      </ResponsiveContainer>
+      <Card className="flex flex-col h-full p-4 items-center justify-center">
+        <p className="text-foreground-500">
+          {exhibits && exhibits.length > 0 ? "Invalid exhibit index." : "No exhibits available yet."}
+        </p>
+        <Button variant="flat" size="sm" onClick={onClose} className="mt-4">Close Panel</Button>
+      </Card>
     );
-  };
+  }
 
   return (
-    <motion.div
-      className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-lg"
-      initial={{ x: 350, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 350, opacity: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+    <Card 
+      className="flex flex-col h-full w-full rounded-none lg:rounded-l-lg border-l border-divider shadow-lg"
+      radius="none"
     >
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
-        <h3 className="font-medium text-slate-800 dark:text-white flex items-center gap-2">
-          <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-1.5 rounded-md">
-            {currentExhibit + 1}
+      <CardHeader className="flex items-center justify-between p-3 border-b border-divider">
+        <h3 className="font-medium text-foreground flex items-center gap-2">
+          <span className="bg-primary/10 text-primary text-xs font-semibold p-1 rounded-md aspect-square flex items-center justify-center">
+            {currentIndex + 1}
           </span>
           {exhibit?.title || "Exhibit"}
         </h3>
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-            onClick={onPin}
-          >
-            <Pin
-              className={`h-4 w-4 ${isPinned ? "text-purple-500 dark:text-purple-400" : "text-slate-500 dark:text-slate-400"}`}
-            />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-          </Button>
+          <Tooltip content={isPinned ? "Unpin Panel" : "Pin Panel"} placement="bottom">
+             <Button isIconOnly variant="light" size="sm" aria-label="Pin panel" onClick={onPin}>
+               <Pin size={16} className={isPinned ? "text-primary" : "text-foreground-500"} />
+             </Button>
+          </Tooltip>
+          <Tooltip content="Close Panel" placement="bottom">
+             <Button isIconOnly variant="light" size="sm" aria-label="Close panel" onClick={onClose}>
+               <X size={16} className="text-foreground-500" />
+             </Button>
+          </Tooltip>
         </div>
-      </div>
+      </CardHeader>
 
-      <div className="flex-1 overflow-auto p-4">
-        {exhibit?.type === "image" && (
+      <CardBody className="p-4 overflow-auto flex-1">
+        {exhibit.type === "image" && imageUrl && (
           <div
-            className="flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4"
+            className="flex items-center justify-center bg-content1 rounded-lg p-2"
             style={{ transform: `scale(${zoomLevel})`, transformOrigin: "center", transition: "transform 0.2s" }}
           >
-            <img
-              src={exhibit.url || "/placeholder.svg"}
+            <NextUIImage
+              src={imageUrl}
               alt={exhibit.title}
-              className="max-w-full h-auto rounded-md shadow-sm"
+              radius="md"
+              shadow="sm"
+              className="max-w-full h-auto object-contain"
             />
           </div>
         )}
 
-        {exhibit?.type === "table" && (
-          <div className="overflow-x-auto bg-white dark:bg-slate-900 rounded-lg shadow-sm">
+        {exhibit.type === "table" && tableHeaders.length > 0 && (
+          <div className="overflow-x-auto bg-content1 rounded-lg shadow-sm border border-divider">
             <table className="w-full border-collapse">
-              <thead>
+              <thead className="bg-content2">
                 <tr>
-                  {exhibit.data.headers.map((header: string, i: number) => (
-                    <th
-                      key={i}
-                      className="border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-3 text-sm text-left font-medium"
-                    >
+                  {tableHeaders.map((header, i) => (
+                    <th key={i} className="border-b border-divider p-3 text-sm text-left font-medium text-foreground-600">
                       {header}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {exhibit.data.rows.map((row: string[], i: number) => (
-                  <tr
-                    key={i}
-                    className={i % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-slate-50 dark:bg-slate-800/50"}
-                  >
+                {tableRows.map((row, i) => (
+                  <tr key={i} className="border-b border-divider last:border-b-0 hover:bg-content2 transition-colors">
                     {row.map((cell, j) => (
-                      <td key={j} className="border border-slate-200 dark:border-slate-700 p-3 text-sm">
+                      <td key={j} className="p-3 text-sm text-foreground">
                         {cell}
                       </td>
                     ))}
@@ -192,65 +152,87 @@ export function ExhibitPanel({
           </div>
         )}
 
-        {exhibit?.type === "chart" && (
-          <div className="h-[350px] flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 shadow-sm">
-            {renderChart()}
+        {(exhibit.type === 'pie' || exhibit.type === 'bar' || exhibit.type === 'line') && formattedChartData && (
+          <div className="h-[300px] w-full flex items-center justify-center bg-content1 rounded-lg p-2 shadow-sm border border-divider">
+            <ResponsiveContainer width="100%" height="100%">
+              <>
+                {exhibit.type === 'pie' && (
+                  <PieChart>
+                    <RechartsTooltip contentStyle={{ backgroundColor: 'var(--nextui-background)', borderRadius: 'var(--nextui-radius-medium)', border: '1px solid var(--nextui-colors-divider)', color: 'var(--nextui-foreground)' }} wrapperClassName="text-xs"/>
+                    <Legend wrapperStyle={{ fontSize: '0.75rem'}} />
+                    <Pie data={formattedChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                      return (
+                        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize="10px">
+                          {`${(percent * 100).toFixed(0)}%`}
+                        </text>
+                      );
+                    }}>
+                      {formattedChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    </Pie>
+                  </PieChart>
+                )}
+                {exhibit.type === 'bar' && (
+                  <BarChart data={formattedChartData}>
+                     <CartesianGrid strokeDasharray="3 3" stroke="var(--nextui-colors-divider)" />
+                     <XAxis dataKey="name" stroke="var(--nextui-colors-foreground-500)" fontSize={10} />
+                     <YAxis stroke="var(--nextui-colors-foreground-500)" fontSize={10}/>
+                     <RechartsTooltip contentStyle={{ backgroundColor: 'var(--nextui-background)', borderRadius: 'var(--nextui-radius-medium)', border: '1px solid var(--nextui-colors-divider)', color: 'var(--nextui-foreground)' }} wrapperClassName="text-xs"/>
+                     <Legend wrapperStyle={{ fontSize: '0.75rem'}} />
+                     <Bar dataKey="value" name="Value">
+                        {formattedChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                     </Bar>
+                  </BarChart>
+                )}
+                {exhibit.type === 'line' && (
+                   <LineChart data={formattedChartData}>
+                     <CartesianGrid strokeDasharray="3 3" stroke="var(--nextui-colors-divider)" />
+                     <XAxis dataKey="name" stroke="var(--nextui-colors-foreground-500)" fontSize={10} />
+                     <YAxis stroke="var(--nextui-colors-foreground-500)" fontSize={10}/>
+                     <RechartsTooltip contentStyle={{ backgroundColor: 'var(--nextui-background)', borderRadius: 'var(--nextui-radius-medium)', border: '1px solid var(--nextui-colors-divider)', color: 'var(--nextui-foreground)' }} wrapperClassName="text-xs" />
+                     <Legend wrapperStyle={{ fontSize: '0.75rem'}} />
+                     <Line type="monotone" dataKey="value" stroke="var(--nextui-colors-primary)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Value" />
+                   </LineChart>
+                )}
+              </>
+            </ResponsiveContainer>
           </div>
         )}
-      </div>
+      </CardBody>
 
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+      <CardFooter className="p-3 border-t border-divider flex items-center justify-between gap-2">
         <div className="flex gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-lg"
-            onClick={handleZoomOut}
-            disabled={zoomLevel <= 0.5}
-          >
-            <ZoomOut className="h-3.5 w-3.5 mr-1" />
-            <span className="text-xs">Zoom Out</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-lg"
-            onClick={handleZoomIn}
-            disabled={zoomLevel >= 2}
-          >
-            <ZoomIn className="h-3.5 w-3.5 mr-1" />
-            <span className="text-xs">Zoom In</span>
-          </Button>
-          <Button variant="outline" size="sm" className="h-8 rounded-lg">
-            <Download className="h-3.5 w-3.5 mr-1" />
-            <span className="text-xs">Download</span>
-          </Button>
+          <Tooltip content="Zoom Out" placement="top">
+             <Button isIconOnly variant="flat" size="sm" aria-label="Zoom Out" onClick={handleZoomOut} isDisabled={zoomLevel <= 0.5}>
+               <ZoomOut size={16} />
+             </Button>
+          </Tooltip>
+           <Tooltip content="Zoom In" placement="top">
+             <Button isIconOnly variant="flat" size="sm" aria-label="Zoom In" onClick={handleZoomIn} isDisabled={zoomLevel >= 2}>
+               <ZoomIn size={16} />
+             </Button>
+           </Tooltip>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 rounded-full"
-            onClick={onPrev}
-            disabled={currentExhibit === 0}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-xs text-slate-700 dark:text-slate-300">
-            {currentExhibit + 1} / {exhibits.length}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 rounded-full"
-            onClick={onNext}
-            disabled={currentExhibit === exhibits.length - 1}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="flex gap-1">
+           <Tooltip content="Previous Exhibit" placement="top">
+              <Button isIconOnly variant="flat" size="sm" aria-label="Previous Exhibit" onClick={onPrev} isDisabled={currentIndex <= 0}>
+                 <ChevronLeft size={16} />
+              </Button>
+           </Tooltip>
+           <span className="text-xs text-foreground-500 px-2 flex items-center">
+             {currentIndex + 1} / {exhibits.length}
+           </span>
+           <Tooltip content="Next Exhibit" placement="top">
+              <Button isIconOnly variant="flat" size="sm" aria-label="Next Exhibit" onClick={onNext} isDisabled={currentIndex >= exhibits.length - 1}>
+                 <ChevronRight size={16} />
+              </Button>
+           </Tooltip>
         </div>
-      </div>
-    </motion.div>
+      </CardFooter>
+    </Card>
   )
 }

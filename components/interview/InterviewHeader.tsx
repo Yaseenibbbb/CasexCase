@@ -3,220 +3,158 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { X, Clock, Wifi, WifiOff, HelpCircle, Volume2, VolumeX } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+import { Button, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Tooltip, Switch, useDisclosure, Spacer } from "@nextui-org/react"
 import type { CaseType } from "@/lib/data"
 
 interface InterviewHeaderProps {
   caseType: CaseType | null
-  isRecording: boolean
-  isPaused: boolean
   elapsedTime: number
   remainingTime: number
   isConnected: boolean
   isTtsEnabled: boolean
   onExit: () => void
   onTtsToggle: (enabled: boolean) => void
+  currentStep: number
+  caseTitle: string | null
+  totalDuration: number
+  onSave: () => void
+  onComplete: () => void
 }
 
 export function InterviewHeader({
   caseType,
-  isRecording,
-  isPaused,
   elapsedTime,
   remainingTime,
   isConnected,
   isTtsEnabled,
   onExit,
   onTtsToggle,
+  caseTitle,
+  totalDuration,
+  onSave,
+  onComplete,
 }: InterviewHeaderProps) {
   const router = useRouter()
-  const [showExitDialog, setShowExitDialog] = useState(false)
+  const {isOpen: isExitModalOpen, onOpen: openExitModal, onOpenChange: onExitModalOpenChange} = useDisclosure()
   const [isLowTime, setIsLowTime] = useState(false)
   const [isVeryLowTime, setIsVeryLowTime] = useState(false)
 
-  // Check if time is running low
   useEffect(() => {
-    setIsLowTime(remainingTime <= 300) // 5 minutes
-    setIsVeryLowTime(remainingTime <= 120) // 2 minutes
+    const fiveMinutes = 5 * 60;
+    const twoMinutes = 2 * 60;
+    setIsLowTime(remainingTime <= fiveMinutes);
+    setIsVeryLowTime(remainingTime <= twoMinutes);
   }, [remainingTime])
 
-  // Format time as MM:SS
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
-  // Get timer class based on remaining time
-  const getTimerClass = () => {
-    if (isVeryLowTime) return "text-timer-danger animate-pulse-danger"
-    if (isLowTime) return "text-timer-warning animate-pulse-warning"
-    return "text-timer-normal"
+  const getTimerColor = (): "default" | "warning" | "danger" => {
+    if (isVeryLowTime) return "danger"
+    if (isLowTime) return "warning"
+    return "default"
   }
 
   return (
-    <header className="sticky top-0 z-10 w-full glass">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-lg bg-background/90 border-b border-divider shadow-sm">
+        <div className="max-w-screen-2xl mx-auto px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <Tooltip content="Exit Interview" placement="bottom">
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowExitDialog(true)}
-                    className="rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
+                    isIconOnly
+                    variant="light"
+                    aria-label="Exit Interview"
+                    onClick={openExitModal}
+                    className="text-foreground-500"
                   >
-                    <X size={24} className="text-slate-600 dark:text-slate-400" />
+                    <X size={20} />
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Exit Interview (Ctrl+Q)</p>
-                </TooltipContent>
               </Tooltip>
-            </TooltipProvider>
 
-            <div>
-              <h1 className="font-heading text-xl font-semibold text-slate-800 dark:text-white flex items-center gap-3">
-                {caseType?.title || "Case Interview"}
-                <span className={`font-mono text-sm ${getTimerClass()}`}>
-                  <Clock size={16} className="inline-block mr-1" />
-                  {formatTime(remainingTime)}
-                </span>
-              </h1>
-
-              <div className="flex items-center gap-3 mt-1">
-                <Badge variant="outline" className="text-xs bg-slate-100/80 dark:bg-slate-800/80 rounded-full">
-                  {caseType?.difficulty || "Intermediate"}
-                </Badge>
-
-                {/* Connection status */}
-                <div className="flex items-center gap-1.5">
-                  {isConnected ? (
-                    <Wifi className="h-3.5 w-3.5 text-success" />
-                  ) : (
-                    <WifiOff className="h-3.5 w-3.5 text-destructive" />
+              <div className="min-w-0">
+                <h1 className="font-semibold text-lg text-foreground truncate">
+                  {caseTitle || "Case Interview"}
+                </h1>
+                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                  {caseType && (
+                    <Chip size="sm" variant="flat" color="secondary">
+                      {caseType?.difficulty || "Intermediate"}
+                    </Chip>
                   )}
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {isConnected ? "Connected" : "Offline"}
-                  </span>
+                  <Chip 
+                    size="sm" 
+                    variant="light" 
+                    color={getTimerColor()} 
+                    startContent={<Clock size={14} />}
+                    className="font-mono"
+                  >
+                    {formatTime(remainingTime)}
+                  </Chip>
+                  <Chip 
+                    size="sm" 
+                    variant="light" 
+                    color={isConnected ? "success" : "danger"} 
+                    startContent={isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
+                  >
+                    {isConnected ? "Online" : "Offline"}
+                  </Chip>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div
-                      className={`h-3 w-3 rounded-full ${
-                        isRecording && !isPaused ? "bg-success animate-pulse" : "bg-slate-300 dark:bg-slate-600"
-                      }`}
-                    />
-                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                      {isRecording && !isPaused ? "Mic Active" : "Mic Muted"}
-                    </span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Press M to toggle microphone</p>
-                </TooltipContent>
+            <div className="flex items-center gap-2">
+              <Tooltip content={isTtsEnabled ? "Disable AI Voice (TTS)" : "Enable AI Voice (TTS)"} placement="bottom">
+                  <Switch
+                     isSelected={isTtsEnabled}
+                     onValueChange={onTtsToggle}
+                     size="sm"
+                     color="primary"
+                     thumbIcon={isTtsEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
+                     aria-label="Toggle Text-to-Speech"
+                  />
               </Tooltip>
-            </TooltipProvider>
 
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="tts-toggle"
-                      checked={isTtsEnabled}
-                      onCheckedChange={onTtsToggle}
-                      aria-label="Toggle Text-to-Speech"
-                      className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-700"
-                    />
-                    <Label htmlFor="tts-toggle" className="sr-only">Text-to-Speech</Label>
-                    {isTtsEnabled ? <Volume2 size={16} className="text-slate-600 dark:text-slate-400" /> : <VolumeX size={16} className="text-slate-600 dark:text-slate-400" />}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{isTtsEnabled ? "Disable" : "Enable"} AI Voice (TTS)</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="outline" className="rounded-full">
-                    <HelpCircle size={18} />
+              <Tooltip content="Help & Shortcuts" placement="bottom">
+                  <Button isIconOnly variant="light" aria-label="Help" className="text-foreground-500">
+                     <HelpCircle size={18} />
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <div className="space-y-2 p-1">
-                    <p className="font-medium">Keyboard Shortcuts:</p>
-                    <ul className="text-xs space-y-1">
-                      <li>
-                        <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">M</kbd> - Toggle
-                        microphone
-                      </li>
-                      <li>
-                        <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">E</kbd> - Toggle exhibits
-                      </li>
-                      <li>
-                        <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">N</kbd> - Toggle notes
-                      </li>
-                      <li>
-                        <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">Ctrl+Q</kbd> - Exit
-                        interview
-                      </li>
-                    </ul>
-                  </div>
-                </TooltipContent>
               </Tooltip>
-            </TooltipProvider>
+              <Spacer x={2} />
+            </div>
           </div>
         </div>
-      </div>
+      </header>
+      
+      {/* Add invisible spacer to prevent content from being hidden under the fixed header */}
+      <div className="h-[64px] w-full"></div>
 
-      {/* Exit Confirmation Dialog */}
-      <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <DialogContent className="sm:max-w-md rounded-xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Exit Interview?</DialogTitle>
-            <DialogDescription className="text-slate-500 dark:text-slate-400">
-              Your progress will be saved. You can resume this interview later from your dashboard.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-row justify-end gap-2 sm:justify-end mt-4">
-            <Button variant="outline" onClick={() => setShowExitDialog(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={onExit}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-            >
-              Save & Exit
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </header>
+      <Modal isOpen={isExitModalOpen} onOpenChange={onExitModalOpenChange} backdrop="blur">
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 text-xl">Exit Interview?</ModalHeader>
+              <ModalBody>
+                <p className="text-foreground-600">
+                  Your progress will be saved. You can resume this interview later from your dashboard.
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" color="default" onPress={onClose}> 
+                  Cancel
+                </Button>
+                <Button color="danger" onPress={() => { onExit(); onClose(); }}>
+                  Save & Exit
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    </>
   )
 }

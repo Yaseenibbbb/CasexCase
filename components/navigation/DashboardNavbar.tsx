@@ -11,7 +11,7 @@ import {
   Button,
   Breadcrumbs,
   BreadcrumbItem
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { ArrowLeft } from 'lucide-react';
 import { CATEGORIZED_BEHAVIORAL_QUESTIONS } from '@/lib/data'; // To get category/question titles
 

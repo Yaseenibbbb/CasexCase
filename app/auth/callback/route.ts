@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
@@ -10,10 +10,22 @@ export async function GET(request: Request) {
 
   if (code) {
     try {
-    const cookieStore = cookies()
-      const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+      const cookieStore = cookies();
+      // Provide getAll/setAll for SSR cookie handling
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll: () => {
+              const all = cookieStore.getAll();
+              return all.map((cookie: any) => ({ name: cookie.name, value: cookie.value }));
+            },
+          },
+        }
+      );
       console.log("[AuthCallback] Exchanging code for session...")
-    await supabase.auth.exchangeCodeForSession(code)
+      await supabase.auth.exchangeCodeForSession(code)
       console.log("[AuthCallback] Code exchange successful.")
     } catch (error) {
       console.error("[AuthCallback] Error exchanging code:", error)

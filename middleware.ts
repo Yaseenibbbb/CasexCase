@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -7,7 +7,23 @@ export async function middleware(req: NextRequest) {
   console.log(`[Middleware] Running for path: ${req.nextUrl.pathname}`)
 
   // Create a Supabase client configured to use cookies
-  const supabase = createMiddlewareClient({ req, res })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => {
+          const all = req.cookies.getAll();
+          return all.map((cookie: any) => ({ name: cookie.name, value: cookie.value }));
+        },
+        setAll: (newCookies) => {
+          newCookies.forEach(({ name, value, options }: any) => {
+            res.cookies.set(name, value, options);
+          });
+        }
+      }
+    }
+  );
 
   // Refresh session if expired - required for Server Components
   // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware

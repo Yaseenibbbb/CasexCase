@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { X, Clock, Wifi, WifiOff, HelpCircle, Volume2, VolumeX } from "lucide-react"
-import { Button, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Tooltip, Switch, useDisclosure, Spacer } from "@nextui-org/react"
+import { Button, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Tooltip, Switch, useDisclosure, Spacer } from "@heroui/react"
 import type { CaseType } from "@/lib/data"
 
 interface InterviewHeaderProps {

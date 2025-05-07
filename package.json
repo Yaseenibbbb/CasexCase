@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",
+    "@heroui/react": "^2.7.8",
     "@hookform/resolvers": "^3.9.1",
     "@nextui-org/react": "^2.6.11",
     "@radix-ui/react-accordion": "1.2.2",
@@ -40,6 +41,7 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "latest",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "latest",
     "@types/react-syntax-highlighter": "^15.5.13",
     "autoprefixer": "^10.4.20",
@@ -68,12 +70,10 @@
     "remark-gfm": "^4.0.1",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss": "latest",
     "vaul": "^0.9.6",
     "zod": "^3.24.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.5",
     "@tailwindcss/typography": "^0.5.16",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22",
@@ -81,7 +81,7 @@
     "@types/react-dom": "^18.0.0",
     "postcss": "^8",
     "rimraf": "^6.0.1",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.8.3"
   }

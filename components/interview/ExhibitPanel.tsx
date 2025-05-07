@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { X, Pin, Download, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react"
-import { Button, Card, CardHeader, CardBody, CardFooter, Divider, Image as NextUIImage, Tooltip } from "@nextui-org/react"
+import { Button, Card, CardHeader, CardBody, CardFooter, Divider, Image as NextUIImage, Tooltip } from "@heroui/react"
 import {
   ResponsiveContainer,
   LineChart,

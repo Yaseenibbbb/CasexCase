@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 // Removed Shadcn Tooltip imports
 // import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 // Added NextUI imports
-import { Progress, Tooltip, Card, CardBody, CardHeader } from "@nextui-org/react";
+import { Progress, Tooltip, Card, CardBody, CardHeader } from "@heroui/react";
 import { Check } from "lucide-react"; // Import Check icon
 
 interface ProgressMeterProps {

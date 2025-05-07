@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Avatar, Button, Card, CardBody, Spacer } from "@nextui-org/react"
+import { Avatar, Button, Card, CardBody, Spacer } from "@heroui/react"
 import { ChevronDown, ChevronUp, ImageIcon, BrainCircuit, User as UserIcon } from "lucide-react"
 import type { Exhibit } from "@/lib/parseExhibits"
 import { cn } from "@/lib/utils"

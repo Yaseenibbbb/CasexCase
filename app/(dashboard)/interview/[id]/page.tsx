@@ -947,7 +947,7 @@ export default function InterviewPage() {
       {/* Calculator Overlay */}
       {showCalculator && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div ref={calculatorRef} className="relative">
+          <div ref={calculatorRef} className="relative max-w-full mx-4">
             <CalculatorWidget 
               onInsertResult={handleInsertCalculatorResult} 
               onClose={() => setShowCalculator(false)} 
@@ -959,7 +959,7 @@ export default function InterviewPage() {
       {/* Scratchpad/Notes Overlay */}
       {showNotes && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="relative w-full max-w-2xl">
+          <div className="relative w-full max-w-2xl mx-4">
             <FrameworkCanvas 
               value={notes} 
               onClose={() => setShowNotes(false)} 
@@ -969,10 +969,10 @@ export default function InterviewPage() {
       )}
 
       {/* Main Content Area */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-1 flex-col min-h-0 p-4 lg:p-6 space-y-4 overflow-hidden">
+          <div className="flex flex-1 flex-col min-h-0 p-3 sm:p-4 lg:p-6 space-y-4 overflow-hidden order-2 lg:order-1">
             <div ref={chatContainerRef} className="flex-1 min-h-0 flex flex-col-reverse overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
               <div className="space-y-4">
                 <AnimatePresence>
@@ -1072,13 +1072,13 @@ export default function InterviewPage() {
         )}
         {/* Right Panel - Conditionally Rendered */}
         {showRightPanel_DEBUG && (
-          <div className="flex flex-col w-80 xl:w-96 border-l border-divider p-4 space-y-4 bg-content1 overflow-y-auto h-full min-h-0">
+          <div className="flex flex-col w-full lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-divider p-3 sm:p-4 space-y-4 bg-content1 overflow-y-auto h-60 lg:h-full min-h-0 order-1 lg:order-2">
             <h2 className="text-lg font-semibold text-foreground">Tools & Exhibits</h2>
 
             {/* Case Showcase */}
             <Card className="mb-2">
               <CardBody>
-                <h3 className="text-base font-bold mb-1 text-foreground">
+                <h3 className="text-base font-bold mb-1 text-foreground line-clamp-1">
                   {(
                     caseSession?.case_details?.title ||
                     caseSession?.generated_case_data?.caseFacts?.ClientName ||
@@ -1088,7 +1088,7 @@ export default function InterviewPage() {
                     'Case'
                   )}
                 </h3>
-                <p className="text-sm text-foreground-500 mb-1">
+                <p className="text-sm text-foreground-500 mb-1 line-clamp-2">
                   {(
                     caseSession?.generated_case_data?.caseFacts?.CompanyBackground ||
                     caseSession?.generated_case_data?.caseFacts?.BuyerBackground ||
@@ -1098,7 +1098,7 @@ export default function InterviewPage() {
                     ''
                   )}
                 </p>
-                <p className="text-xs text-foreground-400 mb-1">
+                <p className="text-xs text-foreground-400 mb-1 line-clamp-1">
                   {(
                     caseSession?.generated_case_data?.caseFacts?.StrategicContext ||
                     caseSession?.generated_case_data?.caseFacts?.MarketContext ||
@@ -1107,7 +1107,7 @@ export default function InterviewPage() {
                     ''
                   )}
                 </p>
-                <p className="text-xs text-foreground-400">
+                <p className="text-xs text-foreground-400 line-clamp-2">
                   {(
                     caseSession?.generated_case_data?.caseFacts?.CoreTask ||
                     caseSession?.generated_case_data?.caseFacts?.ProblemStatement ||
@@ -1126,13 +1126,15 @@ export default function InterviewPage() {
 
             {/* Tool Buttons at the bottom */}
             <div className="mt-auto pt-4">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2">
                 {/* Calculator Button */}
                 <Tooltip content="Toggle Calculator" placement="bottom">
                   <Button 
                     variant="flat" 
                     onClick={() => setShowCalculator(prev => !prev)}
                     startContent={<Calculator size={16} />}
+                    className="text-xs sm:text-sm"
+                    size="sm"
                   >
                     Calculator
                   </Button>
@@ -1144,6 +1146,8 @@ export default function InterviewPage() {
                     onClick={handleToggleExhibitPanel}
                     isDisabled={exhibits.length === 0}
                     startContent={<FileText size={16} />}
+                    className="text-xs sm:text-sm"
+                    size="sm"
                   >
                     {showExhibit ? "Hide Exhibits" : "Show Exhibits"}
                   </Button>
@@ -1154,6 +1158,8 @@ export default function InterviewPage() {
                     variant="flat" 
                     onClick={() => setShowNotes(prev => !prev)}
                     startContent={<Notebook size={16} />}
+                    className="text-xs sm:text-sm"
+                    size="sm"
                   >
                     Scratchpad
                   </Button>
@@ -1165,6 +1171,8 @@ export default function InterviewPage() {
                     onClick={handleAddClarification}
                     isDisabled={interactionState !== 'AI_SPEAKING' && interactionState !== 'AI_PROCESSING'}
                     startContent={<HelpCircle size={16} />}
+                    className="text-xs sm:text-sm"
+                    size="sm"
                   >
                     Clarify
                   </Button>
@@ -1175,6 +1183,8 @@ export default function InterviewPage() {
                     variant="flat" 
                     onClick={() => setIsPaused(prev => !prev)}
                     startContent={isPaused ? <PlayCircle size={16} /> : <PauseCircle size={16} />}
+                    className="text-xs sm:text-sm"
+                    size="sm"
                   >
                     {isPaused ? "Resume" : "Pause"}
                   </Button>
@@ -1186,6 +1196,8 @@ export default function InterviewPage() {
                     color="danger"
                     onClick={handleCompleteInterview}
                     startContent={<XCircle size={16} />}
+                    className="text-xs sm:text-sm"
+                    size="sm"
                   >
                     End Case
                   </Button>
@@ -1234,7 +1246,7 @@ export default function InterviewPage() {
       {/* Exhibit Modal - Conditionally Rendered */}
       {showExhibitModal_DEBUG && selectedExhibitId !== null && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setSelectedExhibitId(null)} >
-          <div className="bg-background rounded-lg shadow-xl max-w-3xl max-h-[80vh] overflow-auto p-6 relative text-foreground" onClick={(e) => e.stopPropagation()} >
+          <div className="bg-background rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-auto p-4 sm:p-6 relative text-foreground" onClick={(e) => e.stopPropagation()} >
             <Button isIconOnly variant="light" color="default" className="absolute top-2 right-2" onClick={() => setSelectedExhibitId(null)} aria-label="Close exhibit view">
               <X className="h-5 w-5" />
             </Button>
@@ -1254,10 +1266,12 @@ export default function InterviewPage() {
                     const headers = exhibitToShow!.data.headers as string[];
                     const rows = exhibitToShow!.data.rows as string[][];
                     return (
-                       <table className="w-full text-sm border-collapse">
-                          <thead><tr className="border-b border-divider bg-content2">{headers.map((h, i)=><th key={i} className="p-2 text-left font-medium text-foreground-600">{h}</th>)}</tr></thead>
-                          <tbody>{rows.map((r, i)=><tr key={i} className="border-b border-divider last:border-none hover:bg-content2"><>{r.map((c, j)=><td key={j} className="p-2 text-foreground">{c}</td>)}</></tr>)}</tbody>
-                       </table>
+                       <div className="overflow-x-auto">
+                         <table className="w-full text-sm border-collapse">
+                            <thead><tr className="border-b border-divider bg-content2">{headers.map((h, i)=><th key={i} className="p-2 text-left font-medium text-foreground-600">{h}</th>)}</tr></thead>
+                            <tbody>{rows.map((r, i)=><tr key={i} className="border-b border-divider last:border-none hover:bg-content2"><>{r.map((c, j)=><td key={j} className="p-2 text-foreground">{c}</td>)}</></tr>)}</tbody>
+                         </table>
+                       </div>
                     );
                   } else if (typeof exhibitToShow!.data === 'object' && exhibitToShow!.data !== null) {
                     return <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(exhibitToShow!.data, null, 2)}</pre>;

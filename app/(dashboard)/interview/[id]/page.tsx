@@ -946,8 +946,8 @@ export default function InterviewPage() {
 
       {/* Calculator Overlay */}
       {showCalculator && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div ref={calculatorRef} className="relative max-w-full mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div ref={calculatorRef} className="relative max-w-full mx-4 shadow-2xl rounded-lg overflow-hidden">
             <CalculatorWidget 
               onInsertResult={handleInsertCalculatorResult} 
               onClose={() => setShowCalculator(false)} 
@@ -958,8 +958,8 @@ export default function InterviewPage() {
 
       {/* Scratchpad/Notes Overlay */}
       {showNotes && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="relative w-full max-w-2xl mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="relative w-full max-w-2xl mx-4 shadow-2xl rounded-lg overflow-hidden">
             <FrameworkCanvas 
               value={notes} 
               onClose={() => setShowNotes(false)} 
@@ -969,12 +969,12 @@ export default function InterviewPage() {
       )}
 
       {/* Main Content Area */}
-      <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden bg-gradient-to-b from-background to-background/95">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-1 flex-col min-h-0 p-3 sm:p-4 lg:p-6 space-y-4 overflow-hidden order-2 lg:order-1">
-            <div ref={chatContainerRef} className="flex-1 min-h-0 flex flex-col-reverse overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
-              <div className="space-y-4">
+          <div className="flex flex-1 flex-col min-h-0 p-2 sm:p-3 lg:p-4 space-y-3 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-divider/30">
+            <div ref={chatContainerRef} className="flex-1 min-h-0 flex flex-col-reverse overflow-y-auto pr-1 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
+              <div className="space-y-3 pb-2">
                 <AnimatePresence>
                   {messages.map((message, index) => {
                      const exhibitData = message.exhibitId ? exhibits.find(ex => ex.id === message.exhibitId) : null;
@@ -991,7 +991,13 @@ export default function InterviewPage() {
                      // Only show exhibit if this is an assistant message and the last user message requested/struggled
                      const shouldShowExhibit = message.role === 'assistant' && lastUserMsg && userRequestsExhibit(lastUserMsg, messages);
                      return (
-                       <motion.div key={message.id || index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.2 } }} layout >
+                       <motion.div key={message.id || index} 
+                         initial={{ opacity: 0, y: 10 }} 
+                         animate={{ opacity: 1, y: 0 }} 
+                         exit={{ opacity: 0, transition: { duration: 0.2 } }} 
+                         layout
+                         className={message.role === "assistant" ? "ml-0 mr-10 sm:ml-2 sm:mr-16" : "ml-10 mr-0 sm:ml-16 sm:mr-2"}
+                       >
                          <ChatMessage
                            message={message} 
                            exhibitData={shouldShowExhibit ? exhibitData : null} 
@@ -1003,11 +1009,11 @@ export default function InterviewPage() {
                   })}
                 </AnimatePresence>
                 {interactionState === 'AI_PROCESSING' && (
-                  <div className="flex justify-start max-w-[80%]">
-                     <Card shadow="sm" className="bg-content2">
-                        <CardBody className="flex-row items-center gap-2 p-2">
-                           <Spinner size="sm" color="current" />
-                           <span className="text-small text-foreground-600">Thinking...</span>
+                  <div className="flex justify-start max-w-[80%] ml-1 sm:ml-3">
+                     <Card shadow="sm" className="bg-content2/80 border border-content2">
+                        <CardBody className="flex-row items-center gap-2 py-1.5 px-3">
+                           <Spinner size="sm" color="primary" />
+                           <span className="text-small text-foreground-500">AI is thinking...</span>
                         </CardBody>
                      </Card>
                   </div> 
@@ -1015,9 +1021,9 @@ export default function InterviewPage() {
                 <div ref={messagesEndRef} /> 
               </div>
             </div>
-            <div className="relative mt-auto border-t border-divider pt-4">
+            <div className="relative border-t border-divider/50 pt-3 bg-background/50 backdrop-blur-sm rounded-t-md">
                {isRecording && ( 
-                  <div className="absolute bottom-full left-0 right-0 flex justify-center items-center bg-background/80 backdrop-blur-sm p-2 rounded-t-lg z-10">
+                  <div className="absolute bottom-full left-0 right-0 flex justify-center items-center bg-background/80 backdrop-blur-sm p-1.5 rounded-t-lg z-10 border-t border-l border-r border-danger/20">
                      <VoiceWaveform />
                      <span className="ml-2 text-sm font-medium text-danger animate-pulse">Recording...</span>
                   </div>
@@ -1036,33 +1042,34 @@ export default function InterviewPage() {
                    onKeyDown={handleKeyDown}
                    minRows={1}
                    maxRows={5} 
-                   variant="flat"
-                   className="flex-1 resize-none"
+                   variant="bordered"
+                   className="flex-1 resize-none text-sm rounded-lg"
                    isDisabled={(interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'IDLE'} 
                    aria-label="Chat input"
                  />
-                 <div className="flex items-center space-x-1">
+                 <div className="flex items-center space-x-1.5">
                     <Tooltip content={isRecording ? "Stop Recording" : "Start Recording"} placement="top">
                         <Button
-                          variant="flat" size="lg" isIconOnly 
+                          variant="flat" size="md" isIconOnly 
                           onClick={isRecording ? handleStopRecording : handleStartRecording}
                           isDisabled={((interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'USER_RECORDING') || ((interactionState as InteractionState) === 'USER_RECORDING' && !isRecording)} 
                           aria-label={isRecording ? "Stop Recording" : "Start Recording"}
                           color={isRecording ? "danger" : "default"} 
-                          className={` ${isRecording ? 'animate-pulse' : ''}`}
+                          className={`rounded-full ${isRecording ? 'animate-pulse bg-danger/20' : ''}`}
                         >
-                          {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />} 
+                          {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />} 
                         </Button>
                     </Tooltip>
                     <Tooltip content="Send Message" placement="top">
                         <Button
-                          color="primary" size="lg" isIconOnly
+                          color="primary" size="md" isIconOnly
                           onClick={handleSendMessage}
                           isDisabled={!inputMessage.trim() || (interactionState as InteractionState) !== 'USER_TURN' || isRecording} 
                           isLoading={(interactionState as InteractionState) === 'AI_PROCESSING'} 
                           aria-label="Send message"
+                          className="rounded-full"
                         >
-                          {! ((interactionState as InteractionState) === 'AI_PROCESSING') && <Send className="h-5 w-5" />}
+                          {! ((interactionState as InteractionState) === 'AI_PROCESSING') && <Send className="h-4 w-4" />}
                         </Button>
                     </Tooltip>
                  </div>
@@ -1072,13 +1079,16 @@ export default function InterviewPage() {
         )}
         {/* Right Panel - Conditionally Rendered */}
         {showRightPanel_DEBUG && (
-          <div className="flex flex-col w-full lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-divider p-3 sm:p-4 space-y-4 bg-content1 overflow-y-auto h-60 lg:h-full min-h-0 order-1 lg:order-2">
-            <h2 className="text-lg font-semibold text-foreground">Tools & Exhibits</h2>
+          <div className="flex flex-col w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-l border-divider/30 p-3 sm:p-4 space-y-3 bg-content1/30 backdrop-blur-sm overflow-y-auto h-60 lg:h-full min-h-0 order-1 lg:order-2">
+            <h2 className="text-lg font-medium text-foreground flex items-center gap-2">
+              <span className="inline-block w-1.5 h-4 bg-primary rounded-sm"></span> 
+              Tools & Exhibits
+            </h2>
 
             {/* Case Showcase */}
-            <Card className="mb-2">
-              <CardBody>
-                <h3 className="text-base font-bold mb-1 text-foreground line-clamp-1">
+            <Card className="bg-content1/70 backdrop-blur-sm shadow-sm border border-content2/30">
+              <CardBody className="p-3">
+                <h3 className="text-base font-semibold mb-1.5 text-foreground line-clamp-1 border-l-2 border-primary pl-2">
                   {(
                     caseSession?.case_details?.title ||
                     caseSession?.generated_case_data?.caseFacts?.ClientName ||
@@ -1088,7 +1098,7 @@ export default function InterviewPage() {
                     'Case'
                   )}
                 </h3>
-                <p className="text-sm text-foreground-500 mb-1 line-clamp-2">
+                <p className="text-sm text-foreground-600 mb-1.5 line-clamp-2">
                   {(
                     caseSession?.generated_case_data?.caseFacts?.CompanyBackground ||
                     caseSession?.generated_case_data?.caseFacts?.BuyerBackground ||
@@ -1098,7 +1108,7 @@ export default function InterviewPage() {
                     ''
                   )}
                 </p>
-                <p className="text-xs text-foreground-400 mb-1 line-clamp-1">
+                <p className="text-xs text-foreground-500 mb-1 line-clamp-1">
                   {(
                     caseSession?.generated_case_data?.caseFacts?.StrategicContext ||
                     caseSession?.generated_case_data?.caseFacts?.MarketContext ||
@@ -1107,7 +1117,8 @@ export default function InterviewPage() {
                     ''
                   )}
                 </p>
-                <p className="text-xs text-foreground-400 line-clamp-2">
+                <div className="text-xs text-foreground-500 line-clamp-2 bg-content2/30 p-2 rounded-sm">
+                  <span className="font-medium text-primary-500">Task:</span>{" "}
                   {(
                     caseSession?.generated_case_data?.caseFacts?.CoreTask ||
                     caseSession?.generated_case_data?.caseFacts?.ProblemStatement ||
@@ -1115,100 +1126,97 @@ export default function InterviewPage() {
                     caseSession?.case_details?.objective ||
                     ''
                   ) || <span className="italic text-foreground-300">No case details available.</span>}
-                </p>
+                </div>
               </CardBody>
             </Card>
 
             {/* Progress Meter */}
-            <ProgressMeter 
-              currentStep={currentStep}
-            />
+            <div className="bg-content1/70 backdrop-blur-sm shadow-sm border border-content2/30 rounded-lg p-3">
+              <div className="flex justify-between items-center mb-1.5">
+                <h3 className="text-sm font-medium text-foreground-600">Progress</h3>
+                <span className="text-xs font-medium text-primary-500">{Math.round(progressPercent)}%</span>
+              </div>
+              <ProgressMeter 
+                currentStep={currentStep}
+              />
+            </div>
 
-            {/* Tool Buttons at the bottom */}
-            <div className="mt-auto pt-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2">
+            {/* Tool Buttons */}
+            <div className="mt-auto pt-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="col-span-2 mb-1">
+                  <h3 className="text-sm font-medium text-foreground-600 mb-1.5">Interview Tools</h3>
+                </div>
                 {/* Calculator Button */}
-                <Tooltip content="Toggle Calculator" placement="bottom">
-                  <Button 
-                    variant="flat" 
-                    onClick={() => setShowCalculator(prev => !prev)}
-                    startContent={<Calculator size={16} />}
-                    className="text-xs sm:text-sm"
-                    size="sm"
-                  >
-                    Calculator
-                  </Button>
-                </Tooltip>
+                <Button 
+                  variant="flat" 
+                  onClick={() => setShowCalculator(prev => !prev)}
+                  startContent={<Calculator size={14} />}
+                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium"
+                  size="sm"
+                >
+                  Calculator
+                </Button>
                 {/* Exhibits Button */}
-                <Tooltip content={showExhibit ? "Hide Exhibits" : "Show Exhibits"} placement="bottom">
-                  <Button 
-                    variant="flat" 
-                    onClick={handleToggleExhibitPanel}
-                    isDisabled={exhibits.length === 0}
-                    startContent={<FileText size={16} />}
-                    className="text-xs sm:text-sm"
-                    size="sm"
-                  >
-                    {showExhibit ? "Hide Exhibits" : "Show Exhibits"}
-                  </Button>
-                </Tooltip>
+                <Button 
+                  variant="flat" 
+                  onClick={handleToggleExhibitPanel}
+                  isDisabled={exhibits.length === 0}
+                  startContent={<FileText size={14} />}
+                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium"
+                  size="sm"
+                >
+                  {showExhibit ? "Hide Exhibits" : "Show Exhibits"}
+                </Button>
                 {/* Scratchpad Button */}
-                <Tooltip content="Open Scratchpad" placement="bottom">
-                  <Button 
-                    variant="flat" 
-                    onClick={() => setShowNotes(prev => !prev)}
-                    startContent={<Notebook size={16} />}
-                    className="text-xs sm:text-sm"
-                    size="sm"
-                  >
-                    Scratchpad
-                  </Button>
-                </Tooltip>
+                <Button 
+                  variant="flat" 
+                  onClick={() => setShowNotes(prev => !prev)}
+                  startContent={<Notebook size={14} />}
+                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium"
+                  size="sm"
+                >
+                  Scratchpad
+                </Button>
                 {/* Need Clarification Button */}
-                <Tooltip content="Ask for Clarification" placement="bottom">
-                  <Button 
-                    variant="flat" 
-                    onClick={handleAddClarification}
-                    isDisabled={interactionState !== 'AI_SPEAKING' && interactionState !== 'AI_PROCESSING'}
-                    startContent={<HelpCircle size={16} />}
-                    className="text-xs sm:text-sm"
-                    size="sm"
-                  >
-                    Clarify
-                  </Button>
-                </Tooltip>
+                <Button 
+                  variant="flat" 
+                  onClick={handleAddClarification}
+                  isDisabled={interactionState !== 'AI_SPEAKING' && interactionState !== 'AI_PROCESSING'}
+                  startContent={<HelpCircle size={14} />}
+                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                  size="sm"
+                >
+                  Clarify
+                </Button>
                 {/* Pause/Resume Timer Button */}
-                <Tooltip content={isPaused ? "Resume Timer" : "Pause Timer"} placement="bottom">
-                  <Button 
-                    variant="flat" 
-                    onClick={() => setIsPaused(prev => !prev)}
-                    startContent={isPaused ? <PlayCircle size={16} /> : <PauseCircle size={16} />}
-                    className="text-xs sm:text-sm"
-                    size="sm"
-                  >
-                    {isPaused ? "Resume" : "Pause"}
-                  </Button>
-                </Tooltip>
+                <Button 
+                  variant="flat" 
+                  onClick={() => setIsPaused(prev => !prev)}
+                  startContent={isPaused ? <PlayCircle size={14} /> : <PauseCircle size={14} />}
+                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium"
+                  size="sm"
+                >
+                  {isPaused ? "Resume" : "Pause"}
+                </Button>
                 {/* End Interview Button */}
-                <Tooltip content="End Interview" placement="bottom">
-                  <Button 
-                    variant="flat" 
-                    color="danger"
-                    onClick={handleCompleteInterview}
-                    startContent={<XCircle size={16} />}
-                    className="text-xs sm:text-sm"
-                    size="sm"
-                  >
-                    End Case
-                  </Button>
-                </Tooltip>
+                <Button 
+                  variant="flat" 
+                  color="danger"
+                  onClick={handleCompleteInterview}
+                  startContent={<XCircle size={14} />}
+                  className="text-xs bg-danger/10 hover:bg-danger/20 font-medium"
+                  size="sm"
+                >
+                  End Case
+                </Button>
               </div>
             </div>
 
             {/* Pinned Exhibit View */}
             {isPinned && exhibits.length > 0 && (
-              <div className="mt-4">
-                <Card className="border border-divider">
+              <div className="mt-2">
+                <Card className="border border-primary/30 bg-content1/70 backdrop-blur-sm shadow-sm">
                   <CardBody className="p-3">
                     <h3 className="text-sm font-medium mb-2 flex items-center gap-1 text-foreground-600">
                       <Pin size={14} className="text-primary" />
@@ -1227,7 +1235,7 @@ export default function InterviewPage() {
 
             {/* Exhibits Panel (when opened) */}
             {showExhibit && exhibits.length > 0 && (
-              <div className="mt-4 flex-shrink-0">
+              <div className="mt-2 flex-shrink-0">
                 <ExhibitPanel
                   exhibits={exhibits}
                   currentIndex={panelExhibitIndex}
@@ -1245,8 +1253,20 @@ export default function InterviewPage() {
 
       {/* Exhibit Modal - Conditionally Rendered */}
       {showExhibitModal_DEBUG && selectedExhibitId !== null && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setSelectedExhibitId(null)} >
-          <div className="bg-background rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-auto p-4 sm:p-6 relative text-foreground" onClick={(e) => e.stopPropagation()} >
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }} 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" 
+          onClick={() => setSelectedExhibitId(null)} 
+        >
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-background rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-auto p-4 sm:p-6 relative text-foreground border border-content2/30" 
+            onClick={(e) => e.stopPropagation()} 
+          >
             <Button isIconOnly variant="light" color="default" className="absolute top-2 right-2" onClick={() => setSelectedExhibitId(null)} aria-label="Close exhibit view">
               <X className="h-5 w-5" />
             </Button>
@@ -1261,7 +1281,7 @@ export default function InterviewPage() {
                 } else {
                   // Render exhibit details directly, using non-null assertion (!)
                   if (exhibitToShow!.type === 'image' && typeof exhibitToShow!.data === 'string') {
-                    return <NextUIImage src={exhibitToShow!.data} alt={exhibitToShow!.title} className="max-w-full h-auto" />;
+                    return <NextUIImage src={exhibitToShow!.data} alt={exhibitToShow!.title} className="max-w-full h-auto rounded-md" />;
                   } else if (exhibitToShow!.type === 'table' && typeof exhibitToShow!.data === 'object' && exhibitToShow!.data !== null && 'headers' in exhibitToShow!.data && 'rows' in exhibitToShow!.data) {
                     const headers = exhibitToShow!.data.headers as string[];
                     const rows = exhibitToShow!.data.rows as string[][];
@@ -1274,15 +1294,15 @@ export default function InterviewPage() {
                        </div>
                     );
                   } else if (typeof exhibitToShow!.data === 'object' && exhibitToShow!.data !== null) {
-                    return <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(exhibitToShow!.data, null, 2)}</pre>;
+                    return <pre className="text-xs whitespace-pre-wrap bg-content2/30 p-3 rounded-md">{JSON.stringify(exhibitToShow!.data, null, 2)}</pre>;
                   } else if (typeof exhibitToShow!.data === 'string') {
-                     return <p>{exhibitToShow!.data as string}</p>;
+                     return <p className="bg-content2/30 p-3 rounded-md">{exhibitToShow!.data as string}</p>;
                   } else {
                     return <p>Cannot display exhibit data.</p>;
                   }
                 }
             })()}
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </div>

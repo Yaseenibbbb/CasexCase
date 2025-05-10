@@ -969,12 +969,11 @@ export default function InterviewPage() {
       )}
 
       {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-1 flex-col p-4 lg:p-6 space-y-4 overflow-hidden">
-            
-            <div ref={chatContainerRef} className="flex-1 flex flex-col-reverse overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
+          <div className="flex flex-1 flex-col min-h-0 p-4 lg:p-6 space-y-4 overflow-hidden">
+            <div ref={chatContainerRef} className="flex-1 min-h-0 flex flex-col-reverse overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
               <div className="space-y-4">
                 <AnimatePresence>
                   {messages.map((message, index) => {
@@ -1003,7 +1002,6 @@ export default function InterviewPage() {
                      );
                   })}
                 </AnimatePresence>
-                
                 {interactionState === 'AI_PROCESSING' && (
                   <div className="flex justify-start max-w-[80%]">
                      <Card shadow="sm" className="bg-content2">
@@ -1017,17 +1015,13 @@ export default function InterviewPage() {
                 <div ref={messagesEndRef} /> 
               </div>
             </div>
-
-            
             <div className="relative mt-auto border-t border-divider pt-4">
-               
                {isRecording && ( 
                   <div className="absolute bottom-full left-0 right-0 flex justify-center items-center bg-background/80 backdrop-blur-sm p-2 rounded-t-lg z-10">
                      <VoiceWaveform />
                      <span className="ml-2 text-sm font-medium text-danger animate-pulse">Recording...</span>
                   </div>
                 )}
-               
                <div className="flex items-end space-x-2">
                 <Textarea
                    ref={inputRef} 
@@ -1042,13 +1036,12 @@ export default function InterviewPage() {
                    onKeyDown={handleKeyDown}
                    minRows={1}
                    maxRows={5} 
-                   variant="flat" // Changed variant
+                   variant="flat"
                    className="flex-1 resize-none"
                    isDisabled={(interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'IDLE'} 
                    aria-label="Chat input"
                  />
                  <div className="flex items-center space-x-1">
-                     
                     <Tooltip content={isRecording ? "Stop Recording" : "Start Recording"} placement="top">
                         <Button
                           variant="flat" size="lg" isIconOnly 
@@ -1061,7 +1054,6 @@ export default function InterviewPage() {
                           {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />} 
                         </Button>
                     </Tooltip>
-                    
                     <Tooltip content="Send Message" placement="top">
                         <Button
                           color="primary" size="lg" isIconOnly
@@ -1078,10 +1070,9 @@ export default function InterviewPage() {
             </div>
           </div>
         )}
-
         {/* Right Panel - Conditionally Rendered */}
         {showRightPanel_DEBUG && (
-          <div className="flex flex-col w-80 xl:w-96 border-l border-divider p-4 space-y-4 bg-content1 overflow-y-auto h-full">
+          <div className="flex flex-col w-80 xl:w-96 border-l border-divider p-4 space-y-4 bg-content1 overflow-y-auto h-full min-h-0">
             <h2 className="text-lg font-semibold text-foreground">Tools & Exhibits</h2>
 
             {/* Case Showcase */}

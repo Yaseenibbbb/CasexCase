@@ -41,6 +41,50 @@ export const caseService = {
 
   // Get a specific case session
   async getCaseSession(sessionId: string) {
+    // Check if demo mode
+    const isDemo = sessionStorage.getItem('demoMode') === 'true';
+    if (isDemo && sessionId.startsWith('demo-session-')) {
+      // Return mock session for demo mode
+      const mockSession = {
+        id: sessionId,
+        user_id: 'demo-user',
+        case_type: 'diagnostic',
+        case_title: 'Diagnostic Case',
+        duration_minutes: 0,
+        completed: false,
+        performance_rating: null,
+        notes: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        generated_case_data: {
+          caseMeta: {
+            title: "Diagnostic Case Study",
+            industry: "Technology",
+            company: "TechFlow Solutions",
+            geography: "Global",
+            difficulty: "intermediate",
+            time_limit: 30,
+            role_focus: "Strategy"
+          },
+          exhibits: [
+            {
+              id: "E1",
+              type: "table",
+              title: "Market Overview",
+              content: "| Metric | Value |\n|--------|-------|\n| Market Size | $2.5B |\n| Growth Rate | 15% |\n| Competition | High |"
+            }
+          ],
+          sections: {
+            background: "TechFlow Solutions is a mid-size technology consulting firm considering expansion into healthcare tech consulting.",
+            objectives: "- Evaluate market opportunity\n- Assess competitive landscape\n- Recommend go/no-go decision",
+            tasks: "Analyze the healthcare tech consulting market and provide a recommendation on whether to enter this market.",
+            interviewerScript: "**Opening Prompt:** Please restate the objective and outline your approach to evaluating this market entry opportunity."
+          }
+        }
+      };
+      return { data: mockSession, error: null };
+    }
+
     const supabase = getSupabaseBrowserClient()
     const { data, error } = await supabase
       .from("case_sessions")
@@ -67,13 +111,73 @@ export const caseService = {
     // Check if demo mode
     const isDemo = sessionStorage.getItem('demoMode') === 'true';
     if (isDemo) {
-      // Return mock session for demo mode
-      const mockSession = {
-        id: `demo-session-${Date.now()}`,
+      // Create demo session and generate case using the new API
+      const demoSessionId = `demo-session-${Date.now()}`;
+      const demoSession = {
+        id: demoSessionId,
         ...caseSession,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        generated_case_data: {
+      };
+
+      // Call the case generation API to get a real generated case
+      try {
+        const generateResponse = await fetch('/api/generate-case-details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            sessionId: demoSessionId, 
+            caseType: caseSession.case_type,
+            useCase: `A ${caseSession.case_type} case study requiring strategic analysis and recommendation`,
+            company: 'N/A',
+            industry: 'Technology',
+            roleFocus: 'Strategy',
+            geography: 'Global',
+            difficulty: 'intermediate',
+            timeLimitMinutes: 30,
+            includeSolutionGuide: false,
+            exhibitPreferences: 'auto',
+            constraintsNotes: 'Standard business assumptions apply'
+          }),
+        });
+
+        if (generateResponse.ok) {
+          const generateData = await generateResponse.json();
+          demoSession.generated_case_data = generateData.data;
+          console.log("[caseService] Demo mode - generated real case:", generateData.data);
+        } else {
+          // Fallback to mock data if generation fails
+          demoSession.generated_case_data = {
+            caseMeta: {
+              title: `${caseSession.case_type} Case Study`,
+              industry: "Technology",
+              company: "TechFlow Solutions",
+              geography: "Global",
+              difficulty: "intermediate",
+              time_limit: 30,
+              role_focus: "Strategy"
+            },
+            exhibits: [
+              {
+                id: "E1",
+                type: "table",
+                title: "Market Overview",
+                content: "| Metric | Value |\n|--------|-------|\n| Market Size | $2.5B |\n| Growth Rate | 15% |\n| Competition | High |"
+              }
+            ],
+            sections: {
+              background: "TechFlow Solutions is a mid-size technology consulting firm considering expansion into healthcare tech consulting.",
+              objectives: "- Evaluate market opportunity\n- Assess competitive landscape\n- Recommend go/no-go decision",
+              tasks: "Analyze the healthcare tech consulting market and provide a recommendation on whether to enter this market.",
+              interviewerScript: "**Opening Prompt:** Please restate the objective and outline your approach to evaluating this market entry opportunity."
+            }
+          };
+          console.log("[caseService] Demo mode - using fallback mock data");
+        }
+      } catch (error) {
+        console.error("[caseService] Demo mode - case generation failed:", error);
+        // Use fallback mock data
+        demoSession.generated_case_data = {
           caseMeta: {
             title: `${caseSession.case_type} Case Study`,
             industry: "Technology",
@@ -83,24 +187,17 @@ export const caseService = {
             time_limit: 30,
             role_focus: "Strategy"
           },
-          exhibits: [
-            {
-              id: "E1",
-              type: "table",
-              title: "Market Overview",
-              content: "| Metric | Value |\n|--------|-------|\n| Market Size | $2.5B |\n| Growth Rate | 15% |\n| Competition | High |"
-            }
-          ],
           sections: {
             background: "TechFlow Solutions is a mid-size technology consulting firm considering expansion into healthcare tech consulting.",
             objectives: "- Evaluate market opportunity\n- Assess competitive landscape\n- Recommend go/no-go decision",
             tasks: "Analyze the healthcare tech consulting market and provide a recommendation on whether to enter this market.",
             interviewerScript: "**Opening Prompt:** Please restate the objective and outline your approach to evaluating this market entry opportunity."
           }
-        }
-      };
-      console.log("[caseService] Demo mode - returning mock session:", mockSession);
-      return { data: mockSession, error: null };
+        };
+      }
+
+      console.log("[caseService] Demo mode - returning session with generated case:", demoSession);
+      return { data: demoSession, error: null };
     }
 
     const supabase = getSupabaseBrowserClient();

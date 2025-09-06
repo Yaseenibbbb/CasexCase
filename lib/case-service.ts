@@ -31,8 +31,20 @@ export const caseService = {
     const entropy = `${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2))}`;
 
     // Generate case directly instead of calling API route
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    
+    console.log('[CaseService] Environment check:', {
+      hasOpenAIKey: !!openaiApiKey,
+      keyLength: openaiApiKey?.length || 0,
+      keyPrefix: openaiApiKey?.substring(0, 10) || 'none'
+    });
+    
+    if (!openaiApiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is missing or empty');
+    }
+    
     const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: openaiApiKey,
     });
 
     const systemPrompt = buildCasePackGeneratorSystem({

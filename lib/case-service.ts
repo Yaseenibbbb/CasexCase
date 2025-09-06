@@ -146,52 +146,26 @@ export const caseService = {
           demoSession.generated_case_data = generateData.data;
           console.log("[caseService] Demo mode - generated real case:", generateData.data);
         } else {
-          console.error("[caseService] Demo mode - case generation failed, retrying with different parameters");
-          // Try again with different parameters to ensure variety
-          const retryResponse = await fetch('/api/generate-case-details', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              sessionId: demoSessionId, 
-              caseType: caseSession.case_type,
-              useCase: `A ${caseSession.case_type} case study requiring strategic analysis and recommendation`,
-              company: 'N/A',
-              industry: ['Technology', 'Healthcare', 'Finance', 'Retail', 'Manufacturing'][Math.floor(Math.random() * 5)],
-              roleFocus: ['Strategy', 'Operations', 'Product', 'Marketing', 'Finance'][Math.floor(Math.random() * 5)],
-              geography: ['Global', 'North America', 'Europe', 'Asia', 'Middle East'][Math.floor(Math.random() * 5)],
-              difficulty: 'intermediate',
-              timeLimitMinutes: 30,
-              includeSolutionGuide: false,
-              exhibitPreferences: 'auto',
-              constraintsNotes: 'Standard business assumptions apply'
-            }),
-          });
-
-          if (retryResponse.ok) {
-            const retryData = await retryResponse.json();
-            demoSession.generated_case_data = retryData.data;
-            console.log("[caseService] Demo mode - retry successful with varied case");
-          } else {
-            // Only use fallback if both attempts fail
-            demoSession.generated_case_data = {
-              caseMeta: {
-                title: `${caseSession.case_type} Case Study`,
-                industry: "Technology",
-                company: "TechFlow Solutions",
-                geography: "Global",
-                difficulty: "intermediate",
-                time_limit: 30,
-                role_focus: "Strategy"
-              },
-              sections: {
-                background: "TechFlow Solutions is a mid-size technology consulting firm considering expansion into healthcare tech consulting.",
-                objectives: "Your main goals here are to evaluate the market opportunity, assess the competitive landscape, and recommend whether to proceed with the market entry.",
-                tasks: "So your job is to analyze the healthcare tech consulting market and provide a recommendation on whether to enter this market.",
-                interviewerScript: "Please restate the objective and outline your approach to evaluating this market entry opportunity."
-              }
-            };
-            console.log("[caseService] Demo mode - using fallback mock data after retry failed");
-          }
+          console.error("[caseService] Demo mode - case generation failed, using fallback");
+          // Use fallback mock data if generation fails
+          demoSession.generated_case_data = {
+            caseMeta: {
+              title: `${caseSession.case_type} Case Study`,
+              industry: "Technology",
+              company: "TechFlow Solutions",
+              geography: "Global",
+              difficulty: "intermediate",
+              time_limit: 30,
+              role_focus: "Strategy"
+            },
+            sections: {
+              background: "TechFlow Solutions is a mid-size technology consulting firm considering expansion into healthcare tech consulting.",
+              objectives: "Your main goals here are to evaluate the market opportunity, assess the competitive landscape, and recommend whether to proceed with the market entry.",
+              tasks: "So your job is to analyze the healthcare tech consulting market and provide a recommendation on whether to enter this market.",
+              interviewerScript: "Please restate the objective and outline your approach to evaluating this market entry opportunity."
+            }
+          };
+          console.log("[caseService] Demo mode - using fallback mock data");
         }
       } catch (error) {
         console.error("[caseService] Demo mode - case generation failed:", error);

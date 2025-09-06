@@ -22,15 +22,8 @@ export async function POST(request: NextRequest) {
     const isDemo = sessionId?.startsWith('demo-session-');
     
     if (isDemo) {
-      // Return mock data for demo mode
-      const mockData = generateMockCaseData(caseType);
-      console.log(`[API generate-case-details] Demo mode - returning mock data`);
-      return NextResponse.json({ 
-        success: true, 
-        data: mockData,
-        sessionId: sessionId,
-        demo: true
-      });
+      console.log(`[API generate-case-details] Demo mode - generating real case with OpenAI`);
+      // Continue to OpenAI generation below instead of returning mock data
     }
 
     // Generate case using the new CaseByCase prompt system

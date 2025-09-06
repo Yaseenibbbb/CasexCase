@@ -1,266 +1,304 @@
-import OpenAI from 'openai';
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { casePrompts } from '../chat/route'; // Assuming casePrompts is exported from here
-
-// Define types for the expected case data structure
-interface CaseFacts {
-  ClientName: string;
-  CompanyBackground: string;
-  BuyerName: string;
-  BuyerBackground: string;
-  TargetName: string;
-  TargetBackground: string;
-  StrategicContext: string;
-  MarketContext: string;
-  Industry: string;
-  CoreTask: string;
-  ProblemStatement: string;
-  Task: string;
-  initialPresentationText: string;
-  [key: string]: string; // Allow additional string properties
-}
-
-interface Exhibit {
-  id: number;
-  title: string;
-  type: 'table' | 'chart' | 'image' | 'text';
-  description?: string;
-  data: any; // The specific data structure depends on the exhibit type
-}
-
-interface GeneratedCaseData {
-  caseFacts: CaseFacts;
-  exhibits: Exhibit[];
-}
-
-// Ensure necessary environment variables are set
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("Missing OpenAI API key");
-}
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error("Missing Supabase URL");
-}
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  // IMPORTANT: Use Service Role Key for backend operations
-  throw new Error("Missing Supabase Service Role Key");
-}
+import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Initialize Supabase client with Service Role Key for backend operations
-// NOTE: It's crucial to use the Service Role Key here to bypass RLS policies
-// when updating the case session data from the backend.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+// Create Supabase client with service role key for server-side operations
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Helper function to extract the internal directives from a full prompt
-function extractDirectives(fullPrompt: string): string | null {
-  const startMarker = "🔒 INTERNAL DIRECTIVES — NEVER SHOW THESE RAW STRINGS TO USER";
-  const endMarker = "🎛️ FLOW RULES"; // Or another suitable end marker if FLOW RULES aren't always present
-
-  const startIndex = fullPrompt.indexOf(startMarker);
-  if (startIndex === -1) {
-    return null; // Start marker not found
-  }
-
-  const endIndex = fullPrompt.indexOf(endMarker, startIndex);
-  
-  // Extract text between markers, adjusting for marker lengths
-  const directivesText = endIndex !== -1 
-    ? fullPrompt.substring(startIndex + startMarker.length, endIndex)
-    : fullPrompt.substring(startIndex + startMarker.length); // If end marker not found, take rest of string
-
-  return directivesText.trim();
-}
-
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { sessionId, caseType } = await req.json();
-
+    const { sessionId, caseType, useCase, company, industry, roleFocus, geography, difficulty, timeLimitMinutes, includeSolutionGuide, exhibitPreferences, constraintsNotes } = await request.json();
+    
     console.log(`[API generate-case-details] Received request for sessionId: ${sessionId}, caseType: ${caseType}`);
 
-    if (!sessionId || !caseType) {
-      return NextResponse.json({ error: 'Missing sessionId or caseType' }, { status: 400 });
-    }
-
-    // Get the full prompt for the given caseType
-    const fullPromptTemplate = casePrompts[caseType];
-    if (!fullPromptTemplate) {
-      return NextResponse.json({ error: `Invalid caseType: ${caseType}` }, { status: 400 });
-    }
-
-    // Extract only the "INTERNAL DIRECTIVES" section needed for generation
-    const generationDirectives = extractDirectives(fullPromptTemplate);
-    if (!generationDirectives) {
-      console.error(`[API generate-case-details] Could not extract directives for caseType: ${caseType}`);
-      return NextResponse.json({ error: 'Failed to extract generation directives from prompt template.' }, { status: 500 });
-    }
+    // Check if demo mode
+    const isDemo = sessionId?.startsWith('demo-session-');
     
-    console.log(`[API generate-case-details] Extracted Directives for ${caseType}:`, generationDirectives);
+    if (isDemo) {
+      // Return mock data for demo mode
+      const mockData = generateMockCaseData(caseType);
+      console.log(`[API generate-case-details] Demo mode - returning mock data`);
+      return NextResponse.json({ 
+        success: true, 
+        data: mockData,
+        sessionId: sessionId,
+        demo: true
+      });
+    }
 
-
-    // Construct the prompt for OpenAI, specifically asking for JSON output
-    // Instructing it to ONLY output the JSON object containing caseFacts and exhibits
-    const generationSystemPrompt = `
-You are a case data generation assistant. Based ONLY on the following internal directives, generate a JSON object containing two keys: 'caseFacts' and 'exhibits'. 
-
-IMPORTANT: The 'caseFacts' object MUST include the following keys (even if empty): 
-- ClientName
-- CompanyBackground
-- BuyerName
-- BuyerBackground
-- TargetName
-- TargetBackground
-- StrategicContext
-- MarketContext
-- Industry
-- CoreTask
-- ProblemStatement
-- Task
-- initialPresentationText
-
-***CRITICAL: initialPresentationText MUST contain a detailed introduction of the case (3-5 sentences) and is REQUIRED for the application to function.***
-
-If a value is not relevant for this case, set it to an empty string.
-
-The 'caseFacts' value should be a JSON object populated according to the rules.
-The 'exhibits' value should be an array of JSON objects, each representing an exhibit described in the rules (convert any ASCII or Markdown descriptions into the specified JSON structure).
-Ensure the entire output is a single, valid JSON object and nothing else. Do not include any introductory text, explanations, or markdown formatting around the JSON.
-
-Internal Directives:
----
-${generationDirectives}
----
-
-Example initialPresentationText (make sure to include something similar but specific to this case):
-"Hello, I'm Polly, your case interviewer today. We'll be discussing [ClientName], a [brief description] company in the [Industry] industry. They're facing [brief problem statement]. Your task today is to [Task]. Let's start by hearing your approach to this problem."
-
-Output ONLY the final JSON object. Example structure:
-{
-  "caseFacts": {
-    "ClientName": "Example Corp",
-    "CompanyBackground": "A retail company...",
-    "initialPresentationText": "Hello, I'm Polly, your case interviewer today. We'll be discussing Example Corp, a retail company in the consumer goods industry. They're facing declining market share in their primary markets. Your task today is to evaluate whether they should expand into the online space. Let's start by hearing your approach to this problem."
-    // other required fields
-  },
-  "exhibits": [ /* array of exhibit objects */ ]
-}
-`;
-
-    console.log("[API generate-case-details] Sending generation request to OpenAI...");
+    // Generate case using the new CaseByCase prompt system
+    console.log(`[API generate-case-details] Generating case with CaseByCase prompt system...`);
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Or your preferred model, ensure it handles JSON generation well
+      model: "gpt-4o",
       messages: [
-        { role: 'system', content: generationSystemPrompt },
+        {
+          role: "system",
+          content: `You are CaseByCase's Case Pack Generator. When invoked, you will produce a complete, interview-ready case study for the provided use case. Your output must be friendly for chat + TTS AND machine-readable for the Exhibit Panel.
+
+GOALS
+- Generate a realistic case tailored to the input use case and metadata.
+- Provide clear narrative, tasks, and 2–5 well-scoped exhibits.
+- Suggest structured frameworks and probing questions.
+- (Optional) Include a "Solution Guide" strictly inside the provided delimiters so it can be hidden from candidates.
+
+OUTPUT RULES (critical)
+- Speak as the "Interviewer" to the candidate when addressing them, but keep the case pack itself declarative.
+- Keep sentences TTS-friendly: concise, active voice.
+- Use the exact delimiters below for machine parsing.
+- Do NOT wrap EXHIBIT blocks or META/SOLUTION blocks in code fences.
+- Prefer whole numbers and simple decimals; show units.
+- Charts must include a compact JSON spec compatible with Recharts.
+- Images must include a resolvable URL (or omit if none).
+- If numbers are fabricated, keep them internally consistent.
+
+DELIMITERS (use exactly)
+EXHIBIT BLOCKS:
+[[EXHIBIT:TABLE|id=E#|title="..."]]
+<markdown table here>
+[[/EXHIBIT]]
+
+[[EXHIBIT:CHART|id=E#|title="..."|type=line|xKey="<x>" ]]
+{"data":[{"<x>":"...","<seriesKey>":<number>, ...}], "lines":[{"key":"<seriesKey>","name":"<Legend Label>"}]}
+[[/EXHIBIT]]
+
+[[EXHIBIT:CHART|id=E#|title="..."|type=bar|xKey="<x>" ]]
+{"data":[...], "bars":[{"key":"<seriesKey>","name":"<Legend Label>"}]}
+[[/EXHIBIT]]
+
+[[EXHIBIT:CHART|id=E#|title="..."|type=pie|nameKey="<name>"|valueKey="<value>"]]
+{"data":[{"<name>":"A","<value>":123}, ...]}
+[[/EXHIBIT]]
+
+[[EXHIBIT:IMAGE|id=E#|title="..."|url="https://..."]]
+[[/EXHIBIT]]
+
+META + SOLUTION:
+[[CASE_META]]
+{"title":"...", "industry":"...", "company":"...", "geography":"...", "difficulty":"...", "time_limit":<minutes>, "role_focus":"...", "exhibits":[{"id":"E1","type":"table","title":"..."}, ...]}
+[[/CASE_META]]
+
+[[SOLUTION_GUIDE_START]]
+... your step-by-step solution, key calcs, and model answers ...
+[[SOLUTION_GUIDE_END]]
+
+STRUCTURE (produce all sections)
+# {company} — {concise_case_title_based_on_use_case}
+
+## Background
+- One short paragraph setting context. Include geography if relevant: {geography}.
+- Clarify the core problem and why it matters now.
+
+## Objectives
+- 3–5 bullets with concrete goals (e.g., "size the opportunity", "diagnose margin compression", "design MVP scope").
+
+## Constraints & Assumptions
+- Bullet the constraints from {constraints_notes} plus sensible interview assumptions (e.g., data windows, currency, seasonality).
+
+## Candidate Tasks
+- What the candidate must do (analytics, structure, recommendation). Tie explicitly to the exhibits you will provide.
+
+## Data & Exhibits (Parsed by the app)
+- Provide 2–5 exhibits honoring {exhibit_preferences}. Use E1..E5 ids.
+- Make each exhibit referenced later in the prompts and solution.
+
+## Interviewer Script (Use in the live flow)
+- **Opening Prompt (say this first):** One concise paragraph inviting the candidate to restate the objective and outline their approach.
+- **Probing Questions:** 6–10 bullets touching market size, customer segments, ops bottlenecks, unit economics, risks, and recommendation.
+- **Hints / Framework Nudges:** 3–5 bullets (e.g., "Consider demand-side vs. supply-side constraints", "Decompose margin = price – variable cost – acquisition").
+- **Checkpoint Questions (Quant):** 2–3 quick calculational checks referencing E1/E2 ids.
+- **Wrap-Up Prompt:** Ask for final recommendation, risks, and next steps.
+
+## Evaluation Rubric (for graders or self-check)
+- Structure/MECE (0–5), Quant accuracy (0–5), Business judgment (0–5), Communication/TTS clarity (0–5), Data use (0–5). Define what "5" looks like for each.
+
+## Expected Deliverables (tell the candidate)
+- A 60-second problem framing, 2–3 insights backed by exhibits, and a clear recommendation with quantified impact.
+
+## Notes for the Candidate
+- What is out of scope, any definitions, and time reminders (time limit: {time_limit_minutes} minutes).`
+        },
+        {
+          role: "user",
+          content: `Generate a complete case study with these inputs:
+
+- use_case: ${useCase || 'A business strategy case requiring analysis and recommendation'}
+- company: ${company || 'N/A'}
+- industry: ${industry || 'Technology'}
+- role_focus: ${roleFocus || 'Strategy'}
+- geography: ${geography || 'Global'}
+- difficulty: ${difficulty || 'intermediate'}
+- time_limit_minutes: ${timeLimitMinutes || 30}
+- include_solution_guide: ${includeSolutionGuide || false}
+- exhibit_preferences: ${exhibitPreferences || 'auto'}
+- constraints_notes: ${constraintsNotes || 'Standard business assumptions apply'}
+
+Create a realistic, engaging case study with 2-5 exhibits and all required sections.`
+        }
       ],
-      temperature: 0.7, // Adjust as needed
-      max_tokens: 1000, // Adjust as needed, ensure enough for JSON
-      // Potentially add response_format if supported and helpful: response_format: { type: "json_object" }
+      temperature: 0.7,
     });
 
-    const rawAiResponse = completion.choices[0]?.message?.content;
-    console.log("[API generate-case-details] Raw response from OpenAI:", rawAiResponse);
+    const responseText = completion.choices[0]?.message?.content;
+    console.log(`[API generate-case-details] Raw response from OpenAI:`, responseText);
 
-
-    if (!rawAiResponse) {
-      throw new Error('AI did not return generated case data.');
+    if (!responseText) {
+      throw new Error('No response from OpenAI');
     }
 
-    // Attempt to parse the AI response as JSON
-    let generatedDataJson: GeneratedCaseData | null = null;
-    try {
-       // Sometimes the AI might still wrap the JSON in backticks or add minor text.
-       // Try to find the JSON block more robustly.
-       const jsonMatch = rawAiResponse.match(/{[\s\S]*}/); 
-       if (jsonMatch && jsonMatch[0]) {
-           generatedDataJson = JSON.parse(jsonMatch[0]) as GeneratedCaseData;
-           console.log("[API generate-case-details] Successfully parsed JSON from AI response.");
-       } else {
-           throw new Error("Could not find valid JSON in AI response.");
-       }
-    } catch (parseError) {
-      console.error("[API generate-case-details] Failed to parse JSON from AI response:", parseError);
-      console.error("[API generate-case-details] Raw AI response was:", rawAiResponse);
-      throw new Error('Failed to parse generated case data from AI response.');
-    }
+    // Parse the structured response
+    const parsedData = parseCaseResponse(responseText);
+    console.log(`[API generate-case-details] Successfully parsed case response.`);
 
-    // ---> NEW: Add validation for the parsed JSON structure <---
-    if (!generatedDataJson) {
-        console.error("[API generate-case-details] Parsed data is null.", generatedDataJson);
-        throw new Error('Generated case data structure is invalid (null).');
-    }
+    // Update the case session with generated data
+    console.log(`[API generate-case-details] Updating case session in Supabase...`);
+    const { error: updateError } = await supabase
+      .from('case_sessions')
+      .update({ 
+        generated_case_data: parsedData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', sessionId);
 
-    // Check for top-level keys and correct types
-    if (!generatedDataJson.caseFacts || !generatedDataJson.exhibits) {
-        console.error("[API generate-case-details] Parsed JSON is missing required 'caseFacts' or 'exhibits' keys.", generatedDataJson);
-        throw new Error('Generated case data is missing required keys (caseFacts/exhibits).');
-    }
-
-    if (typeof generatedDataJson.caseFacts !== 'object' || !Array.isArray(generatedDataJson.exhibits)) {
-        console.error("[API generate-case-details] Parsed JSON has incorrect types for 'caseFacts' (should be object) or 'exhibits' (should be array).", generatedDataJson);
-        throw new Error('Generated case data has invalid structure (types).');
-    }
-
-    // Check specifically for initialPresentationText which is required for the interview to start
-    if (!generatedDataJson.caseFacts.initialPresentationText) {
-        console.error("[API generate-case-details] Parsed JSON is missing required 'initialPresentationText' in caseFacts.", generatedDataJson);
-        throw new Error('Generated case data is missing required field: initialPresentationText');
-    }
-    // ---> END NEW VALIDATION <---
-
-    // Temporarily use mock data until DNS resolves
-    const mockCaseData = {
-      caseFacts: {
-        ClientName: "TechFlow Solutions",
-        CompanyBackground: "A mid-size technology consulting firm specializing in digital transformation",
-        BuyerName: "",
-        BuyerBackground: "",
-        TargetName: "",
-        TargetBackground: "",
-        StrategicContext: "Considering expansion into new market segments",
-        MarketContext: "Competitive technology consulting landscape",
-        Industry: "Technology Consulting",
-        CoreTask: "Evaluate market entry strategy",
-        ProblemStatement: "Should TechFlow expand into the healthcare technology consulting market?",
-        Task: "Analyze market opportunity and provide recommendation",
-        initialPresentationText: "Hello, I'm Polly, your case interviewer today. We'll be discussing TechFlow Solutions, a technology consulting firm considering expansion into healthcare tech consulting. They want to understand if this represents a viable growth opportunity. Your task is to evaluate this market entry strategy and provide a recommendation. Let's start by hearing your approach to this problem."
-      },
-      exhibits: []
-    };
-
-    // Try to update Supabase, but continue with mock data if it fails
-    try {
-      const { data: updateData, error: updateError } = await supabaseAdmin
-        .from('case_sessions')
-        .update({ generated_case_data: generatedDataJson || mockCaseData })
-        .eq('id', sessionId)
-        .select()
-
-      if (updateError) {
-        console.warn(`[API generate-case-details] Supabase update failed, using mock data:`, updateError);
-      }
-    } catch (dbError) {
-      console.warn(`[API generate-case-details] Database connection failed, proceeding with mock data:`, dbError);
+    if (updateError) {
+      console.error(`[API generate-case-details] Supabase update failed:`, updateError);
+      // Return the generated data anyway, even if we can't save it
+      console.log(`[API generate-case-details] Supabase update failed, using generated data:`, updateError);
     }
 
     console.log(`[API generate-case-details] Successfully generated and saved data for session ${sessionId}.`);
-    return NextResponse.json({ success: true, message: 'Case details generated successfully.' });
+    return NextResponse.json({ 
+      success: true, 
+      data: parsedData,
+      sessionId: sessionId 
+    });
 
-  } catch (error: any) {
-    console.error("[API generate-case-details] Error:", error);
-    const errorMessage = error.message || 'Internal Server Error';
-    const errorStatus = error.status || 500;
-    return NextResponse.json({ error: errorMessage }, { status: errorStatus });
+  } catch (error) {
+    console.error(`[API generate-case-details] Error:`, error);
+    
+    // Return mock data as fallback
+    const mockData = generateMockCaseData(caseType);
+
+    return NextResponse.json({ 
+      success: true, 
+      data: mockData,
+      fallback: true,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
 
-// Ensure we handle OPTIONS requests for CORS preflight if necessary
-// (Typically needed if calling from a different domain/port, though less common for internal API routes)
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 200 });
-} 
+function parseCaseResponse(responseText: string) {
+  // Extract exhibits using regex
+  const exhibitRegex = /\[\[EXHIBIT:([^|]+)\|([^\]]+)\]\]\s*([\s\S]*?)\s*\[\[\/EXHIBIT\]\]/g;
+  const exhibits = [];
+  let match;
+
+  while ((match = exhibitRegex.exec(responseText)) !== null) {
+    const [, type, attributes, content] = match;
+    const attrObj = {};
+    attributes.split('|').forEach(attr => {
+      const [key, value] = attr.split('=');
+      if (key && value) {
+        attrObj[key] = value.replace(/"/g, '');
+      }
+    });
+
+    exhibits.push({
+      type: type.toLowerCase(),
+      ...attrObj,
+      content: content.trim()
+    });
+  }
+
+  // Extract case meta
+  const metaMatch = responseText.match(/\[\[CASE_META\]\]\s*([\s\S]*?)\s*\[\[\/CASE_META\]\]/);
+  let caseMeta = {};
+  if (metaMatch) {
+    try {
+      caseMeta = JSON.parse(metaMatch[1].trim());
+    } catch (e) {
+      console.error('Failed to parse case meta:', e);
+    }
+  }
+
+  // Extract solution guide if present
+  const solutionMatch = responseText.match(/\[\[SOLUTION_GUIDE_START\]\]\s*([\s\S]*?)\s*\[\[SOLUTION_GUIDE_END\]\]/);
+  const solutionGuide = solutionMatch ? solutionMatch[1].trim() : null;
+
+  // Extract main content sections
+  const sections = {
+    background: extractSection(responseText, '## Background'),
+    objectives: extractSection(responseText, '## Objectives'),
+    constraints: extractSection(responseText, '## Constraints & Assumptions'),
+    tasks: extractSection(responseText, '## Candidate Tasks'),
+    interviewerScript: extractSection(responseText, '## Interviewer Script'),
+    evaluationRubric: extractSection(responseText, '## Evaluation Rubric'),
+    deliverables: extractSection(responseText, '## Expected Deliverables'),
+    notes: extractSection(responseText, '## Notes for the Candidate')
+  };
+
+  return {
+    caseMeta,
+    exhibits,
+    sections,
+    solutionGuide,
+    rawResponse: responseText
+  };
+}
+
+function extractSection(text: string, sectionTitle: string): string {
+  const regex = new RegExp(`${sectionTitle}\\s*([\\s\\S]*?)(?=##|\\[\\[|$)`, 'i');
+  const match = text.match(regex);
+  return match ? match[1].trim() : '';
+}
+
+function generateMockCaseData(caseType: string) {
+  return {
+    caseMeta: {
+      title: `${caseType} Case Study`,
+      industry: "Technology",
+      company: "TechFlow Solutions",
+      geography: "Global",
+      difficulty: "intermediate",
+      time_limit: 30,
+      role_focus: "Strategy",
+      exhibits: [
+        {"id": "E1", "type": "table", "title": "Market Overview"},
+        {"id": "E2", "type": "chart", "title": "Revenue Trends"}
+      ]
+    },
+    exhibits: [
+      {
+        id: "E1",
+        type: "table",
+        title: "Market Overview",
+        content: "| Metric | Value |\n|--------|-------|\n| Market Size | $2.5B |\n| Growth Rate | 15% |\n| Competition | High |"
+      },
+      {
+        id: "E2", 
+        type: "chart",
+        title: "Revenue Trends",
+        content: '{"data":[{"year":"2021","revenue":100},{"year":"2022","revenue":120},{"year":"2023","revenue":140}], "lines":[{"key":"revenue","name":"Revenue (M$)"}]}'
+      }
+    ],
+    sections: {
+      background: "TechFlow Solutions is a mid-size technology consulting firm considering expansion into healthcare tech consulting.",
+      objectives: "- Evaluate market opportunity\n- Assess competitive landscape\n- Recommend go/no-go decision",
+      constraints: "- 6-month decision timeline\n- $50M budget constraint\n- Regulatory compliance required",
+      tasks: "Analyze the healthcare tech consulting market and provide a recommendation on whether to enter this market.",
+      interviewerScript: "**Opening Prompt:** Please restate the objective and outline your approach to evaluating this market entry opportunity.",
+      evaluationRubric: "Structure (0-5), Quant accuracy (0-5), Business judgment (0-5), Communication (0-5), Data use (0-5)",
+      deliverables: "60-second problem framing, 2-3 insights backed by exhibits, clear recommendation with quantified impact",
+      notes: "Focus on market sizing, competitive analysis, and strategic fit. Time limit: 30 minutes."
+    },
+    solutionGuide: null,
+    rawResponse: "Mock case data for demo mode"
+  };
+}

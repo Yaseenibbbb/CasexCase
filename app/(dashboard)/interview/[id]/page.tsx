@@ -298,11 +298,25 @@ export default function InterviewPage() {
          throw new Error("Generated case data provided to trigger function is missing.");
       }
       
-      // Assume the generation API put the presentation text here
-      // Adjust the path `caseFacts.initialPresentationText` if needed based on actual JSON structure
-      const initialPresentationText = generatedData?.caseFacts?.initialPresentationText;
-      // We might also need exhibits defined within the generated data
-      const initialExhibits = generatedData?.exhibits || [];
+      // Handle both old and new case data structures
+      let initialPresentationText = '';
+      let initialExhibits = [];
+      
+      // Check for new CaseByCase structure first
+      if (generatedData?.sections?.interviewerScript) {
+        // Extract opening prompt from interviewer script
+        const scriptMatch = generatedData.sections.interviewerScript.match(/\*\*Opening Prompt[^*]*\*\*:?\s*([^*]+)/i);
+        initialPresentationText = scriptMatch ? scriptMatch[1].trim() : generatedData.sections.interviewerScript;
+        initialExhibits = generatedData?.exhibits || [];
+      } else if (generatedData?.caseFacts?.initialPresentationText) {
+        // Fallback to old structure
+        initialPresentationText = generatedData.caseFacts.initialPresentationText;
+        initialExhibits = generatedData?.exhibits || [];
+      } else if (generatedData?.caseMeta) {
+        // Handle demo mode structure
+        initialPresentationText = "Hello, I'm Polly, your case interviewer. We'll be discussing this case study. Your task is to work through the problem and provide a recommendation. Let's start by hearing your approach.";
+        initialExhibits = generatedData?.exhibits || [];
+      }
 
       if (!initialPresentationText) {
          console.error("[TRIGGER_INIT] Could not find initialPresentationText in generated_case_data:", generatedData);

@@ -125,11 +125,24 @@ export default function DashboardPage() {
         return
       }
 
-      // Generate case details
+      // Generate case details using the new CaseByCase prompt system
       const generateResponse = await fetch('/api/generate-case-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: data.id, caseType: selectedCase }),
+        body: JSON.stringify({ 
+          sessionId: data.id, 
+          caseType: selectedCase,
+          useCase: `A ${selectedCase} case study requiring strategic analysis and recommendation`,
+          company: 'N/A',
+          industry: 'Technology',
+          roleFocus: 'Strategy',
+          geography: 'Global',
+          difficulty: 'intermediate',
+          timeLimitMinutes: 30,
+          includeSolutionGuide: false,
+          exhibitPreferences: 'auto',
+          constraintsNotes: 'Standard business assumptions apply'
+        }),
       })
 
       if (!generateResponse.ok) {

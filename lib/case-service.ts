@@ -74,12 +74,29 @@ export const caseService = {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         generated_case_data: {
-          caseFacts: {
-            ClientName: "TechFlow Solutions",
-            CompanyBackground: "A mid-size technology consulting firm",
-            initialPresentationText: "Hello, I'm Polly, your case interviewer. We'll be discussing TechFlow Solutions, a technology consulting firm considering expansion into healthcare tech consulting. Your task is to evaluate this market entry strategy. Let's start by hearing your approach."
+          caseMeta: {
+            title: `${caseSession.case_type} Case Study`,
+            industry: "Technology",
+            company: "TechFlow Solutions",
+            geography: "Global",
+            difficulty: "intermediate",
+            time_limit: 30,
+            role_focus: "Strategy"
           },
-          exhibits: []
+          exhibits: [
+            {
+              id: "E1",
+              type: "table",
+              title: "Market Overview",
+              content: "| Metric | Value |\n|--------|-------|\n| Market Size | $2.5B |\n| Growth Rate | 15% |\n| Competition | High |"
+            }
+          ],
+          sections: {
+            background: "TechFlow Solutions is a mid-size technology consulting firm considering expansion into healthcare tech consulting.",
+            objectives: "- Evaluate market opportunity\n- Assess competitive landscape\n- Recommend go/no-go decision",
+            tasks: "Analyze the healthcare tech consulting market and provide a recommendation on whether to enter this market.",
+            interviewerScript: "**Opening Prompt:** Please restate the objective and outline your approach to evaluating this market entry opportunity."
+          }
         }
       };
       console.log("[caseService] Demo mode - returning mock session:", mockSession);

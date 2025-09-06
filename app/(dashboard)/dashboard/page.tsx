@@ -1,106 +1,83 @@
 "use client"
 
-import React from "react"
-
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import {
-  Search,
-  Bell,
-  Mic,
-  Calendar,
-  Download,
-  Flame,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Lock,
-  Landmark,
-  BarChart3,
-  Clock,
-  Users,
-  MessageSquare,
-  Filter,
-  List,
-  GraduationCap,
-  Activity,
-  Target,
   Play,
   Plus,
-  Loader2,
+  Clock,
+  Users,
+  Target,
+  BarChart3,
+  TrendingUp,
+  Award,
+  Calendar,
+  ChevronRight,
+  Star,
+  Zap,
+  Brain,
+  Rocket,
+  X,
+  ArrowRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { CASE_TYPES, RECENT_CASES, CATEGORIZED_BEHAVIORAL_QUESTIONS, BehavioralQuestionCategory, BehavioralQuestion, TIME_PER_CASE } from "@/lib/data"
+import { CASE_TYPES, CATEGORIZED_BEHAVIORAL_QUESTIONS } from "@/lib/data"
 import { useAuth } from "@/context/auth-context"
 import { caseService } from "@/lib/case-service"
 import Link from "next/link"
-import { CustomPrepForm } from "@/components/CustomPrepForm"
 import { cn } from "@/lib/utils"
 import { toast } from "@/components/ui/use-toast"
 
-// Helper for level colors (adjust names if Tailwind config uses different ones)
-const levelColor: Record<'Beginner' | 'Intermediate' | 'Advanced', string> = {
-  Beginner:     'accentGreen', // Assuming accentGreen is defined in Tailwind
-  Intermediate: 'accentAmber', // Assuming accentAmber is defined in Tailwind
-  Advanced:     'brand',       // Assuming brand is defined in Tailwind
+const DIFFICULTY_CONFIG = {
+  Beginner: { 
+    color: "bg-emerald-500", 
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/20", 
+    textColor: "text-emerald-700 dark:text-emerald-300",
+    icon: Star
+  },
+  Intermediate: { 
+    color: "bg-blue-500", 
+    bgColor: "bg-blue-50 dark:bg-blue-950/20", 
+    textColor: "text-blue-700 dark:text-blue-300",
+    icon: Zap
+  },
+  Advanced: { 
+    color: "bg-purple-500", 
+    bgColor: "bg-purple-50 dark:bg-purple-950/20", 
+    textColor: "text-purple-700 dark:text-purple-300",
+    icon: Brain
+  },
 }
 
 export default function DashboardPage() {
-  // Log when the component starts rendering
-  console.log("[DashboardPage] Component rendering START");
-
   const router = useRouter()
-  const { user, profile, signOut, isLoading } = useAuth()
+  const { user, profile, isLoading } = useAuth()
   const [selectedCase, setSelectedCase] = useState<string | null>(null)
-  const [filters, setFilters] = useState<string[]>([])
-  const [analyticsOpen, setAnalyticsOpen] = useState(false)
   const [showResumeBanner, setShowResumeBanner] = useState(false)
   const [pausedCase, setPausedCase] = useState<string | null>(null)
-  const [micStatus, setMicStatus] = useState<"granted" | "denied" | "prompt">("prompt")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [isStartingInterview, setIsStartingInterview] = useState(false)
   const [userStats, setUserStats] = useState({
     completedCases: 0,
     totalPracticeHours: 0,
-    skillAccuracy: {
-      math: 0,
-      structure: 0,
-      creativity: 0,
-    },
+    skillAccuracy: { math: 0, structure: 0, creativity: 0 },
   })
   const [recentCases, setRecentCases] = useState<any[]>([])
-  const [isStartingInterview, setIsStartingInterview] = useState(false);
 
   // Fetch user data
   useEffect(() => {
-    console.log(`[DashboardPage] fetchUserData effect triggered. isLoading: ${isLoading}, user exists: ${!!user}`);
-    // Only run fetchUserData if auth is no longer loading AND user is present
     if (!isLoading && user) {
       const fetchUserData = async () => {
-        console.log("[DashboardPage] Auth loaded and user found. Fetching user data...");
-        // Keep setIsLoading(true) for the data fetching itself?
-        // No, use a separate loading state for dashboard data if needed.
-        // setIsLoading(true); // Avoid reusing the auth loading state
         try {
-          // Fetch user stats
           const { data: stats } = await caseService.getUserStats(user.id)
-          if (stats) {
-            setUserStats(stats)
-          }
+          if (stats) setUserStats(stats)
 
-          // Fetch recent case sessions
-          const { data: cases } = await caseService.getUserCaseSessions(user.id) // Pass user ID
+          const { data: cases } = await caseService.getUserCaseSessions(user.id)
           if (cases) {
             setRecentCases(cases)
-
-            // Check for paused cases
             const pausedCase = cases.find((c) => !c.completed)
             if (pausedCase) {
               setPausedCase(pausedCase.case_type)
@@ -108,228 +85,65 @@ export default function DashboardPage() {
             }
           }
         } catch (error) {
-          console.error("Error fetching user data:", error);
-          // Handle data fetch error (e.g., show toast)
-        } finally {
-          // setIsLoading(false); // Only if using a separate loading state
-          console.log("[DashboardPage] fetchUserData finished.");
+          console.error("Error fetching user data:", error)
         }
       }
-
       fetchUserData()
-    } else if (!isLoading && !user) {
-        console.log("[DashboardPage] Auth loaded but no user found.");
-        // Handle case where user is definitely logged out (clear stats, etc.)
-        setUserStats({ completedCases: 0, totalPracticeHours: 0, skillAccuracy: { math: 0, structure: 0, creativity: 0 } });
-        setRecentCases([]);
-        setPausedCase(null);
-        setShowResumeBanner(false);
-    } else {
-        console.log("[DashboardPage] Waiting for auth state (isLoading is true).");
     }
-  // Depend on both isLoading and user
-  }, [user, isLoading]);
-
-  // Simulate a paused case on load if none found in database
-  useEffect(() => {
-    if (recentCases.length === 0 && !isLoading) {
-      const timer = setTimeout(() => {
-        setPausedCase("market-entry")
-        setShowResumeBanner(true)
-      }, 2000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [recentCases, isLoading])
+  }, [user, isLoading])
 
   const handleSelectCase = (type: string) => {
-    setSelectedCase(type)
+    setSelectedCase(selectedCase === type ? null : type)
   }
 
   const handleStartInterview = async () => {
-    console.log("[handleStartInterview] Function called.");
-    if (isStartingInterview) {
-      console.log("[handleStartInterview] Already starting, exiting.");
-      return;
-    }
-    setIsStartingInterview(true);
-    console.log(`[handleStartInterview] selectedCase: ${selectedCase}, user exists: ${!!user}`);
+    if (isStartingInterview || !selectedCase || !user) return
     
-    if (!selectedCase || !user) {
-      console.log("[handleStartInterview] Exiting: selectedCase or user is missing.");
-      toast({ title: "Selection Error", description: "Please select a case type first.", variant: "default" });
-      setIsStartingInterview(false);
-      return;
-    }
-
-    const caseType = CASE_TYPES.find((c) => c.id === selectedCase);
-    console.log(`[handleStartInterview] Found caseType: ${caseType?.title}`);
+    setIsStartingInterview(true)
+    const caseType = CASE_TYPES.find((c) => c.id === selectedCase)
+    
     if (!caseType) {
-        console.log("[handleStartInterview] Exiting: caseType data not found.");
-        toast({ title: "Data Error", description: "Could not find details for the selected case type.", variant: "destructive" });
-        setIsStartingInterview(false);
-        return;
+      toast({ title: "Error", description: "Invalid case type selected", variant: "destructive" })
+      setIsStartingInterview(false)
+      return
     }
 
     try {
-      console.log("[handleStartInterview] Calling caseService.createCaseSession...");
-      const { data, error: createError } = await caseService.createCaseSession({
+      const { data, error } = await caseService.createCaseSession({
         user_id: user.id,
         case_type: selectedCase,
-        case_title: caseType.title, 
+        case_title: caseType.title,
         duration_minutes: 0,
         completed: false,
         notes: null,
         performance_rating: null
-      });
+      })
 
-      // --- Refined Response Handling --- 
-      console.log("[handleStartInterview] createCaseSession RAW response - data:", data, "error:", createError);
-
-      if (createError) {
-          console.error("[handleStartInterview] Error returned from createCaseSession:", createError);
-          toast({ title: "Error Starting Session", description: createError.message || "Could not create the interview session.", variant: "destructive" });
-          setIsStartingInterview(false);
-          return; 
-      }
-      
-      // Explicitly check if data is null/undefined even without an error
-      if (!data) {
-          console.error("[handleStartInterview] createCaseSession returned successfully BUT data is nullish. Check RLS policies or function return logic.", "Returned data:", data, "Returned error:", createError);
-          toast({ title: "Error Starting Session", description: "Failed to retrieve session details after creation. Please try again.", variant: "destructive" });
-          setIsStartingInterview(false);
-          return;
+      if (error || !data) {
+        toast({ title: "Error", description: "Failed to create session", variant: "destructive" })
+        setIsStartingInterview(false)
+        return
       }
 
-      // Extract Session ID (handles single object from .single()) 
-      let sessionId: string | null = null;
-      // Check if data is an object and has an id property
-      if (data && typeof data === 'object' && 'id' in data && data.id) {
-        sessionId = data.id;
-        console.log("[handleStartInterview] Session ID found in single object response:", sessionId);
+      // Generate case details
+      const generateResponse = await fetch('/api/generate-case-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: data.id, caseType: selectedCase }),
+      })
 
-        // ---> NEW STEP: Generate Case Details BEFORE navigating <--- 
-        console.log(`[handleStartInterview] Attempting to generate case details for session: ${sessionId}, type: ${selectedCase}`);
-        try {
-          // Log the request being sent
-          console.log("[handleStartInterview] Sending generation request with payload:", 
-            JSON.stringify({ sessionId, caseType: selectedCase })
-          );
-
-          const generateResponse = await fetch('/api/generate-case-details', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId: sessionId, caseType: selectedCase }),
-          });
-
-          // Enhanced error logging
-          console.log(`[handleStartInterview] Generation API response status: ${generateResponse.status}`);
-          
-          // Check if response is OK
-          if (!generateResponse.ok) {
-            // Get a more detailed error response
-            let errorBody = "Unknown error"; 
-            let errorJson = null;
-            
-            try {
-              // Try reading response body as JSON
-              errorJson = await generateResponse.json();
-              console.error("[handleStartInterview] Error response JSON:", errorJson);
-              errorBody = errorJson?.error || JSON.stringify(errorJson);
-            } catch (e) {
-              // If reading JSON failed, try text
-              console.error("[handleStartInterview] Failed to parse error as JSON:", e);
-              try {
-                errorBody = await generateResponse.text();
-                console.error("[handleStartInterview] Error response Text:", errorBody);
-              } catch (textError) {
-                errorBody = `HTTP status ${generateResponse.status}`;
-                console.error("[handleStartInterview] Failed to read error response:", textError);
-              }
-            }
-            
-            console.error(`[handleStartInterview] Failed to generate case details - Status: ${generateResponse.status}, Body: ${errorBody}`);
-            
-            // Show a more specific error
-            let userErrorMessage = "Failed to generate case details.";
-            if (errorBody.includes("extract generation directives")) {
-              userErrorMessage = "Failed to prepare case details: Missing case template directives.";
-            } else if (errorBody.includes("missing required keys") || errorBody.includes("invalid structure")) {
-              userErrorMessage = "Failed to prepare case: Invalid response from case generation service.";
-            }
-            
-            toast({ 
-              title: "Error Preparing Case", 
-              description: userErrorMessage,
-              variant: "destructive" 
-            });
-            setIsStartingInterview(false);
-            return;
-          }
-
-          // Now parse the successful response
-          let generateResult;
-          try {
-            generateResult = await generateResponse.json();
-            console.log("[handleStartInterview] Generation result:", generateResult);
-          } catch (parseError) {
-            console.error("[handleStartInterview] Failed to parse successful response:", parseError);
-            toast({ 
-              title: "Error Preparing Case", 
-              description: "Received an invalid response from the case generation service.",
-              variant: "destructive" 
-            });
-            setIsStartingInterview(false);
-            return;
-          }
-
-          if (!generateResult.success) {
-            console.error("[handleStartInterview] Case detail generation API returned success:false:", generateResult.error);
-            toast({ 
-              title: "Case Generation Failed", 
-              description: generateResult.error || "Failed to generate case details. Please try again.",
-              variant: "destructive" 
-            });
-            setIsStartingInterview(false);
-            return;
-          }
-          
-          console.log("[handleStartInterview] Case details generated successfully.");
-          
-          // Proceed to navigation ONLY AFTER generation succeeds
-          console.log(`[handleStartInterview] Navigating to /interview/${sessionId}`);
-          router.push(`/interview/${sessionId}`);
-
-        } catch (generationError) {
-          console.error("[handleStartInterview] CATCH block: Error during case detail generation:", generationError);
-          toast({ 
-            title: "Error Preparing Session", 
-            description: generationError instanceof Error ? generationError.message : "Could not generate case details for the interview.", 
-            variant: "destructive" 
-          });
-          setIsStartingInterview(false);
-        }
-        // --- END NEW STEP ---
-
-      } else {
-         // This case should ideally not happen with .single(), but log if it does
-         console.warn("[handleStartInterview] Data received but session ID could not be extracted. Response format might be unexpected.", data);
+      if (!generateResponse.ok) {
+        toast({ title: "Error", description: "Failed to prepare case", variant: "destructive" })
+        setIsStartingInterview(false)
+        return
       }
 
+      router.push(`/interview/${data.id}`)
     } catch (error) {
-      console.error("[handleStartInterview] CATCH block: Error during interview start process:", error);
-      toast({ title: "Error Starting Session", description: "An unexpected error occurred while starting the interview.", variant: "destructive" });
-      setIsStartingInterview(false);
+      console.error("Error starting interview:", error)
+      toast({ title: "Error", description: "Failed to start interview", variant: "destructive" })
     } finally {
-        setIsStartingInterview(false);
-    }
-  };
-
-  const toggleFilter = (filter: string) => {
-    if (filters.includes(filter)) {
-      setFilters(filters.filter((f) => f !== filter))
-    } else {
-      setFilters([...filters, filter])
+      setIsStartingInterview(false)
     }
   }
 
@@ -340,343 +154,350 @@ export default function DashboardPage() {
     }
   }
 
-  const dismissResumeBanner = () => {
-    setShowResumeBanner(false)
-  }
-
-  const filteredCases = CASE_TYPES.filter(
-    (caseType) => filters.length === 0 || filters.includes(caseType.difficulty),
-  ).filter(
-    (caseType) =>
-      searchQuery === "" ||
-      caseType.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      caseType.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
-
-  // Simulate requesting microphone permission
-  const requestMicPermission = () => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then(() => setMicStatus("granted"))
-      .catch(() => setMicStatus("denied"))
-  }
-
-  // Calculate weekly goal progress
   const weeklyGoalPercentage = profile?.weekly_goal_hours
     ? Math.min(100, Math.round((userStats.totalPracticeHours / profile.weekly_goal_hours) * 100))
     : 0
 
-  // Weekly cases data for sparkline
-  const weeklyData =
-    recentCases.length > 0
-      ? [0, 0, 0, 0, 0, 0, 0].map((_, i) => {
-          const daysAgo = 6 - i
-          const date = new Date()
-          date.setDate(date.getDate() - daysAgo)
-          date.setHours(0, 0, 0, 0)
-
-          return recentCases.filter((c) => {
-            const caseDate = new Date(c.created_at)
-            caseDate.setHours(0, 0, 0, 0)
-            return caseDate.getTime() === date.getTime()
-          }).length
-        })
-      : [2, 3, 1, 4, 2, 0, 0] // Fallback data
-
   return (
-    <div className="min-h-screen w-full bg-white dark:bg-[#121420] transition-colors duration-300 overflow-x-hidden p-6 md:p-8 main-content">
-      {/* Resume Banner */}
-      <AnimatePresence>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6 dashboard-content">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Resume Banner */}
         {showResumeBanner && pausedCase && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="relative rounded-xl bg-[#f4f1ff] dark:bg-[#262550]/30 
-                       border border-[#e5deff] dark:border-[#35317e]/30 px-5 py-4 mb-8 flex flex-col sm:flex-row gap-4 sm:items-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white shadow-xl"
           >
-            {/* Banner Text */}
-            <div>
-              <p className="text-sm font-medium purple-text">
-                Continue where you left off
-              </p>
-              <h4 className="font-semibold mt-1">
-                {CASE_TYPES.find((c) => c.id === pausedCase)?.title} 
-                <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">(3 mins)</span>
-              </h4>
-            </div>
-
-            {/* Resume Button */}
-            <div className="flex items-center gap-2 mt-2 sm:mt-0 sm:ml-auto">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Continue where you left off</h3>
+                <p className="text-indigo-100 mt-1">
+                  {CASE_TYPES.find((c) => c.id === pausedCase)?.title} • 3 mins remaining
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
                 <Button
-                    size="sm"
-                    onClick={resumePausedCase}
-                    className="bg-[#7857f7] hover:bg-[#6344e5] text-white
-                              transition-all duration-200 flex items-center gap-1.5 rounded-full px-5"
+                  onClick={resumePausedCase}
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  size="sm"
                 >
-                   <Play size={14} /> Resume
+                  <Play size={16} className="mr-2" />
+                  Resume
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={dismissResumeBanner}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white
-                            hover:bg-gray-100 dark:hover:bg-gray-800
-                            rounded-full h-8 w-8 transition-all"
+                  onClick={() => setShowResumeBanner(false)}
+                  className="text-white/80 hover:text-white hover:bg-white/20"
                 >
-                  <X size={16} />
+                  <X size={18} />
                 </Button>
+              </div>
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
 
-      {/* Welcome Message */}
-      <div className="text-left mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {profile?.full_name?.split(' ')[0] || 'User'}</h1>
-        <p className="mt-1">Continue your case interview preparation journey</p>
-      </div>
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+            Welcome back, {profile?.full_name?.split(' ')[0] || 'User'}
+          </h1>
+          <p className="text-lg text-slate-600 dark:text-slate-400">
+            Ready to master your next case interview?
+          </p>
+        </div>
 
-      {/* Performance Analytics */}
-      <Collapsible open={analyticsOpen} onOpenChange={setAnalyticsOpen} className="mb-8">
-        <Card className="overflow-hidden bg-white dark:bg-[#1e1d2d] border border-gray-200 dark:border-gray-800 rounded-xl">
-          <CollapsibleTrigger asChild>
-            <CardHeader className="flex flex-row items-center justify-between cursor-pointer py-4 px-6">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="purple-text" size={20} />
-                <CardTitle className="text-lg font-semibold">Performance Analytics</CardTitle>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-emerald-700 dark:text-emerald-300 text-sm font-medium">Cases Completed</p>
+                  <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">{userStats.completedCases}</p>
+                </div>
+                <div className="h-12 w-12 bg-emerald-500 rounded-xl flex items-center justify-center">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <Button variant="ghost" size="sm" className="text-gray-500 dark:text-gray-400">
-                {analyticsOpen ? "Hide" : "Show"} Analytics
-                {analyticsOpen ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />}
-              </Button>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="p-6 grid gap-6 sm:grid-cols-3">
-              <Card className="bg-white dark:bg-[#262550] border border-gray-100 dark:border-gray-800 rounded-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">Cases Completed</CardTitle>
-                  <Users className="purple-text" size={16} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{userStats.completedCases}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white dark:bg-[#262550] border border-gray-100 dark:border-gray-800 rounded-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">Practice Hours</CardTitle>
-                  <Clock className="purple-text" size={16} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{userStats.totalPracticeHours.toFixed(1)}</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white dark:bg-[#262550] border border-gray-100 dark:border-gray-800 rounded-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">Weekly Goal</CardTitle>
-                  <Target className="purple-text" size={16} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {weeklyGoalPercentage}%
-                  </div>
-                </CardContent>
-              </Card>
             </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+          </Card>
 
-      {/* Practice Cases Tabs */}
-      <Tabs defaultValue="practice" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-8 gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-xl">
-          <TabsTrigger value="practice" className="data-[state=active]:bg-white data-[state=active]:text-[#121420] dark:data-[state=active]:bg-[#262550] dark:data-[state=active]:text-white rounded-lg py-2">Practice Cases</TabsTrigger>
-          <TabsTrigger value="recent" className="data-[state=active]:bg-white data-[state=active]:text-[#121420] dark:data-[state=active]:bg-[#262550] dark:data-[state=active]:text-white rounded-lg py-2">Recent Sessions</TabsTrigger>
-          <TabsTrigger value="recommended" className="data-[state=active]:bg-white data-[state=active]:text-[#121420] dark:data-[state=active]:bg-[#262550] dark:data-[state=active]:text-white rounded-lg py-2">Recommended</TabsTrigger>
-          <TabsTrigger value="leaderboard" className="data-[state=active]:bg-white data-[state=active]:text-[#121420] dark:data-[state=active]:bg-[#262550] dark:data-[state=active]:text-white rounded-lg py-2">Leaderboard</TabsTrigger>
-        </TabsList>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">Practice Hours</p>
+                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{userStats.totalPracticeHours.toFixed(1)}</p>
+                </div>
+                <div className="h-12 w-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-        <TabsContent value="practice">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
-            <h2 className="text-xl font-semibold text-[#121420] dark:text-white">Practice Cases</h2>
-            <div className="flex items-center gap-2">
-              <Button
-                variant={filters.length === 0 ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilters([])}
-                className={`text-xs rounded-full px-4 ${filters.length === 0 ? 'bg-[#7857f7] hover:bg-[#6344e5] text-white' : ''}`}
-              >
-                All
-              </Button>
-              <Button
-                variant={filters.includes("Beginner") ? "default" : "outline"}
-                size="sm"
-                onClick={() => toggleFilter("Beginner")}
-                className={`text-xs rounded-full px-4 ${filters.includes("Beginner") ? 'bg-[#7857f7] hover:bg-[#6344e5] text-white' : ''}`}
-              >
-                Beginner
-              </Button>
-              <Button
-                variant={filters.includes("Intermediate") ? "default" : "outline"}
-                size="sm"
-                onClick={() => toggleFilter("Intermediate")}
-                className={`text-xs rounded-full px-4 ${filters.includes("Intermediate") ? 'bg-[#7857f7] hover:bg-[#6344e5] text-white' : ''}`}
-              >
-                Intermediate
-              </Button>
-              <Button
-                variant={filters.includes("Advanced") ? "default" : "outline"}
-                size="sm"
-                onClick={() => toggleFilter("Advanced")}
-                className={`text-xs rounded-full px-4 ${filters.includes("Advanced") ? 'bg-[#7857f7] hover:bg-[#6344e5] text-white' : ''}`}
-              >
-                Advanced
-              </Button>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-700 dark:text-purple-300 text-sm font-medium">Weekly Goal</p>
+                  <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{weeklyGoalPercentage}%</p>
+                </div>
+                <div className="h-12 w-12 bg-purple-500 rounded-xl flex items-center justify-center">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <Progress value={weeklyGoalPercentage} className="mt-3 h-2" />
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-amber-700 dark:text-amber-300 text-sm font-medium">Current Streak</p>
+                  <p className="text-3xl font-bold text-amber-900 dark:text-amber-100">{profile?.streak_count || 0}</p>
+                </div>
+                <div className="h-12 w-12 bg-amber-500 rounded-xl flex items-center justify-center">
+                  <Award className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Practice Cases - Main Column */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Practice Cases</h2>
+              <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800">
+                {CASE_TYPES.length} Available
+              </Badge>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCases.map((caseType) => (
-              <div
-                key={caseType.id}
-                onClick={() => handleSelectCase(caseType.id)}
-                className={cn(
-                  "group relative overflow-hidden rounded-xl border transition-all duration-200",
-                  "bg-white dark:bg-[#1e1d2d] border-gray-200 dark:border-gray-800",
-                  "hover:border-[#7857f7] dark:hover:border-[#7857f7] hover:shadow-md",
-                  selectedCase === caseType.id && "ring-2 ring-[#7857f7] border-transparent"
-                )}
-              >
-                <div className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="h-10 w-10 grid place-items-center rounded-lg bg-[#7857f7]/10 text-[#7857f7] flex-shrink-0">
-                      <caseType.icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-[#121420] dark:text-white">{caseType.title}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{caseType.description}</p>
-                      <div className="flex items-center gap-3 text-xs mt-3">
-                        <span className={`rounded-full px-2 py-0.5 font-medium 
-                          ${caseType.difficulty === 'Beginner' ? 'bg-green-100 text-green-700 dark:bg-green-800/30 dark:text-green-400' : 
-                            caseType.difficulty === 'Intermediate' ? 'bg-blue-100 text-blue-700 dark:bg-blue-800/30 dark:text-blue-400' : 
-                            'bg-purple-100 text-purple-700 dark:bg-purple-800/30 dark:text-purple-400'}`}>
-                          {caseType.difficulty}
-                        </span>
-                        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                          <Clock className="h-3 w-3" /> {caseType.duration} min
+            <div className="grid gap-4">
+              {CASE_TYPES.map((caseType) => {
+                const isSelected = selectedCase === caseType.id
+                const config = DIFFICULTY_CONFIG[caseType.difficulty as keyof typeof DIFFICULTY_CONFIG]
+                const DifficultyIcon = config.icon
+
+                return (
+                  <motion.div
+                    key={caseType.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={cn(
+                      "relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer case-card",
+                      "bg-white dark:bg-slate-900/50 backdrop-blur-sm",
+                      isSelected 
+                        ? "border-indigo-500 shadow-lg shadow-indigo-500/25 ring-4 ring-indigo-500/20" 
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-lg"
+                    )}
+                    onClick={() => handleSelectCase(caseType.id)}
+                  >
+                    <div className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className={cn(
+                          "h-14 w-14 rounded-xl flex items-center justify-center",
+                          config.bgColor
+                        )}>
+                          <caseType.icon className={cn("h-7 w-7", config.textColor)} />
+                        </div>
+                        
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                              {caseType.title}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              <Badge className={cn("text-xs font-medium", config.bgColor, config.textColor)}>
+                                <DifficultyIcon className="h-3 w-3 mr-1" />
+                                {caseType.difficulty}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                            {caseType.description}
+                          </p>
+                          
+                          <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {caseType.duration} minutes
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
+                    
+                    {isSelected && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 pointer-events-none"
+                      />
+                    )}
+                  </motion.div>
+                )
+              })}
+            </div>
+
+            {/* Start Practice Button */}
+            {selectedCase && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center pt-4"
+              >
+                <Button
+                  size="lg"
+                  onClick={handleStartInterview}
+                  disabled={isStartingInterview}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {isStartingInterview ? (
+                    <>
+                      <div className="h-5 w-5 mr-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Preparing...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-5 w-5 mr-3" />
+                      Start Practice
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="space-y-6">
+            
+            {/* Quick Actions */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-800/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Rocket className="h-5 w-5 text-indigo-500" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link href="/custom-prep">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between hover:bg-slate-50 dark:hover:bg-slate-800 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 bg-indigo-100 dark:bg-indigo-950/30 rounded-lg flex items-center justify-center">
+                        <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      Custom Prep
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" />
+                  </Button>
+                </Link>
+                
+                <Link href="/chat">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between hover:bg-slate-50 dark:hover:bg-slate-800 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 bg-purple-100 dark:bg-purple-950/30 rounded-lg flex items-center justify-center">
+                        <Brain className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      AI Coach
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Weekly Progress */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-emerald-500" />
+                  Weekly Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      {userStats.totalPracticeHours.toFixed(1)} / {profile?.weekly_goal_hours || 5} hours
+                    </span>
+                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                      {weeklyGoalPercentage}%
+                    </span>
+                  </div>
+                  <Progress value={weeklyGoalPercentage} className="h-3" />
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{userStats.skillAccuracy.math}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Math</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{userStats.skillAccuracy.structure}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Structure</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{userStats.skillAccuracy.creativity}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Creativity</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="absolute top-0 right-0 m-3">
-                  <span className={`text-xs font-medium ${
-                    caseType.difficulty === 'Beginner' ? 'bg-green-100 text-green-700 dark:bg-green-800/30 dark:text-green-400' : 
-                    caseType.difficulty === 'Intermediate' ? 'bg-blue-100 text-blue-700 dark:bg-blue-800/30 dark:text-blue-400' : 
-                    'bg-purple-100 text-purple-700 dark:bg-purple-800/30 dark:text-purple-400'
-                  } px-2 py-0.5 rounded-full`}>
-                    {caseType.difficulty}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {selectedCase && (
-            <div className="mt-6 text-center">
-              <Button 
-                size="lg" 
-                onClick={handleStartInterview} 
-                disabled={isLoading || !selectedCase || isStartingInterview} 
-                className="bg-[#7857f7] hover:bg-[#6344e5] text-white rounded-full px-8 py-2
-                          transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isStartingInterview ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Starting...</>
-                ) : (
-                  <><Play className="mr-2 h-4 w-4" /> Start Practice</>
-                )}
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="recent">
-          <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-            <p>Your recent practice sessions will appear here</p>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="recommended">
-          <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-            <p>Personalized case recommendations coming soon</p>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="leaderboard">
-          <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-            <p>Leaderboard data coming soon</p>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Custom Prep Card */}
-      <Card className="mt-8 bg-[#f4f1ff] dark:bg-[#262550]/30 border-[#e5deff] dark:border-[#35317e]/30 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-[#121420] dark:text-white">Custom Prep</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Want to practice a specific scenario? Create a custom case prep session.</p>
-        </div>
-        <Link href="/custom-prep">
-          <Button 
-            className="bg-[#7857f7] hover:bg-[#6344e5] text-white rounded-full px-5
-                      transition-all duration-200 flex items-center gap-1.5 w-full sm:w-auto"
-          >
-            <Plus size={16} /> Start Custom Prep
-          </Button>
-        </Link>
-      </Card>
-
-      {/* Behavioral & FIT Questions */}
-      <Card className="relative overflow-hidden mt-8 bg-white dark:bg-[#1e1d2d] border border-gray-200 dark:border-gray-800 rounded-xl">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-[#121420] dark:text-white">Behavioral & FIT Questions</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">Prepare for common behavioral interview questions.</CardDescription>
-        </CardHeader>
-        
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-none opacity-40">
-          {Object.values(CATEGORIZED_BEHAVIORAL_QUESTIONS).map((category: BehavioralQuestionCategory) => {
-            const IconComponent = category.icon; 
-            return (
-              <div key={category.slug} className="cursor-not-allowed">
-                <Card className="h-full transition-all duration-300 rounded-lg 
-                        bg-white dark:bg-[#262550]/30 
-                        border border-gray-200 dark:border-gray-700/30">
-                  <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-3">
-                    <div className="p-2 rounded-lg bg-[#7857f7]/10 text-[#7857f7]">
-                      <IconComponent className="h-5 w-5" />
+            {/* Behavioral Questions Preview */}
+            <Card className="border-0 shadow-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50" />
+              <div className="absolute inset-0 bg-black/5 dark:bg-white/5" />
+              
+              <CardHeader className="relative pb-4">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-amber-500" />
+                  Behavioral Questions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative space-y-3">
+                {Object.values(CATEGORIZED_BEHAVIORAL_QUESTIONS).slice(0, 2).map((category) => {
+                  const IconComponent = category.icon
+                  return (
+                    <div key={category.slug} className="flex items-center gap-3 p-3 rounded-lg bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm">
+                      <div className="h-8 w-8 bg-amber-100 dark:bg-amber-950/30 rounded-lg flex items-center justify-center">
+                        <IconComponent className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-700 dark:text-slate-300 text-sm">{category.title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{category.questions.length} questions</p>
+                      </div>
                     </div>
-                    <CardTitle className="text-sm font-medium text-[#121420] dark:text-white">{category.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {category.questions.length} question{category.questions.length !== 1 ? 's' : ''} in this category.
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            );
-          })}
-        </CardContent>
-        
-        {/* Add the Overlay */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 dark:bg-[#1e1d2d]/60 backdrop-blur-sm rounded-xl">
-          <span className="bg-[#7857f7] px-4 py-2 rounded-md text-white font-semibold shadow-md">
-            Coming Soon
-          </span>
+                  )
+                })}
+                
+                <div className="text-center pt-2">
+                  <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30">
+                    Coming Soon
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

@@ -33,7 +33,7 @@ const formSchema = z.object({
 })
 
 export function SignUpForm() {
-  const { signUp, signInWithGoogle, signInWithLinkedIn, signIn } = useAuth()
+  const { signUp, signInWithGoogle, signInWithLinkedIn, signIn, enterDemoMode } = useAuth()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [demoPasscode, setDemoPasscode] = useState("")
@@ -85,12 +85,9 @@ export function SignUpForm() {
   const handleDemoLogin = async () => {
     setIsDemoLoading(true)
     try {
-      const res = await fetch('/api/demo-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passcode: demoPasscode }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Demo login failed')
-      const { error } = await signIn(data.email, demoPasscode)
-      if (error) throw error
-      toast({ title: 'Demo mode', description: 'Signed in as demo user' })
+      const res = await enterDemoMode(demoPasscode)
+      if (!res.ok) throw new Error(res.error || 'Invalid passcode')
+      toast({ title: 'Demo mode', description: 'Using app without account' })
       router.push('/dashboard')
     } catch (e:any) {
       toast({ title: 'Demo login failed', description: e?.message || 'Invalid passcode', variant: 'destructive' })

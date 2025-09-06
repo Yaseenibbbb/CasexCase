@@ -312,6 +312,34 @@
     @apply bg-secondary rounded-full;
   }
 
+  /* Prevent text selection and cursor on dashboard elements */
+  .dashboard-content h1,
+  .dashboard-content h2,
+  .dashboard-content h3,
+  .dashboard-content p,
+  .dashboard-content span,
+  .dashboard-content div:not([contenteditable]):not(.prose):not(.input):not(input):not(textarea) {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    cursor: default;
+  }
+
+  /* Remove blinking cursor animation */
+  .animate-caret-blink {
+    animation: none !important;
+  }
+
+  /* Disable text cursor on cards and buttons */
+  .card-content,
+  .case-card,
+  button,
+  [role="button"] {
+    user-select: none;
+    cursor: pointer;
+  }
+
   ::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50;
   }

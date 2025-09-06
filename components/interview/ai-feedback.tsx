@@ -16,7 +16,6 @@ interface AIFeedbackProps {
 export function AIFeedback({ caseType, currentStep }: AIFeedbackProps) {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([])
   const [input, setInput] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
 
   // Initial greeting message
   useEffect(() => {
@@ -28,7 +27,7 @@ export function AIFeedback({ caseType, currentStep }: AIFeedbackProps) {
     ])
   }, [caseType])
 
-  // Step-specific guidance
+  // Step-specific guidance - removed typewriter effect
   useEffect(() => {
     const stepGuidance = {
       0: "I notice you're at the Problem Definition stage. Make sure to clarify the objectives and key metrics for success.",
@@ -39,16 +38,11 @@ export function AIFeedback({ caseType, currentStep }: AIFeedbackProps) {
     }
 
     if (stepGuidance[currentStep as keyof typeof stepGuidance]) {
-      setIsTyping(true)
-
-      // Simulate AI typing
-      setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: stepGuidance[currentStep as keyof typeof stepGuidance] },
-        ])
-        setIsTyping(false)
-      }, 1000)
+      // Add message immediately without typing simulation
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: stepGuidance[currentStep as keyof typeof stepGuidance] },
+      ])
     }
   }, [currentStep])
 
@@ -114,29 +108,6 @@ export function AIFeedback({ caseType, currentStep }: AIFeedbackProps) {
           </div>
         ))}
 
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-white dark:bg-slate-700 rounded-lg p-3 text-slate-800 dark:text-white">
-              <div className="flex gap-1">
-                <motion.div
-                  className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full"
-                  animate={{ y: [0, -5, 0] }}
-                  transition={{ repeat: Number.POSITIVE_INFINITY, duration: 0.8, delay: 0 }}
-                />
-                <motion.div
-                  className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full"
-                  animate={{ y: [0, -5, 0] }}
-                  transition={{ repeat: Number.POSITIVE_INFINITY, duration: 0.8, delay: 0.2 }}
-                />
-                <motion.div
-                  className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full"
-                  animate={{ y: [0, -5, 0] }}
-                  transition={{ repeat: Number.POSITIVE_INFINITY, duration: 0.8, delay: 0.4 }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="flex gap-2">
@@ -151,7 +122,7 @@ export function AIFeedback({ caseType, currentStep }: AIFeedbackProps) {
           }}
           className="dark:bg-slate-800"
         />
-        <Button onClick={handleSendMessage} disabled={!input.trim() || isTyping}>
+        <Button onClick={handleSendMessage} disabled={!input.trim()}>
           <Send className="h-4 w-4" />
         </Button>
       </div>

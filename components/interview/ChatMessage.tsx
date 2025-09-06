@@ -1,9 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { Avatar, Button, Card, CardBody, Spacer } from "@heroui/react"
 import { ChevronDown, ChevronUp, ImageIcon, BrainCircuit, User as UserIcon } from "lucide-react"
 import type { Exhibit } from "@/lib/parseExhibits"
@@ -39,15 +36,12 @@ export function ChatMessage({ message, exhibitData, showLabel, onExhibitClick }:
   };
 
   return (
-    <motion.div
+    <div
       className={cn(
         "flex gap-3 mb-4 last:mb-0 group",
         isAI ? "max-w-[80%]" : "max-w-[80%] ml-auto",
         isCollapsed ? "opacity-80" : ""
       )}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
     >
       <Avatar 
          {...avatarProps} 
@@ -95,10 +89,8 @@ export function ChatMessage({ message, exhibitData, showLabel, onExhibitClick }:
                "p-3 text-small",
                isCollapsed && "line-clamp-1 overflow-hidden"
                )}>
-                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:whitespace-pre-wrap prose-p:my-1 prose-ul:my-1 prose-ol:my-1"> 
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {message.content}
-                  </ReactMarkdown>
+                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {message.content}
                 </div>
 
                 {exhibitData && (
@@ -125,6 +117,6 @@ export function ChatMessage({ message, exhibitData, showLabel, onExhibitClick }:
             </CardBody>
         </Card>
       </div>
-    </motion.div>
+    </div>
   )
 }

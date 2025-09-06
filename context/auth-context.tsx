@@ -21,12 +21,14 @@ type AuthContextType = {
   signOut: () => Promise<void>
   updateProfile: (profile: Partial<UserProfile>) => Promise<{ error: any }>
   refreshSession: () => Promise<void>
+  enterDemoMode: (passcode: string) => Promise<{ ok: boolean; error?: string }>
 }
 
 // Utility functions for session/user/profile storage
 const SESSION_STORAGE_KEYS = {
   USER_ID: 'userId',
-  USER_PROFILE: 'userProfile'
+  USER_PROFILE: 'userProfile',
+  DEMO_MODE: 'demoMode'
 };
 
 const storageAvailable = typeof window !== 'undefined' && !!window.sessionStorage;
@@ -66,6 +68,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Init state from storage - synchronously to avoid flashing
+  const demoFlag = getFromStorage(SESSION_STORAGE_KEYS.DEMO_MODE) === 'true';
   const cachedUserId = getFromStorage(SESSION_STORAGE_KEYS.USER_ID);
   const cachedProfileStr = getFromStorage(SESSION_STORAGE_KEYS.USER_PROFILE);
   const cachedProfile = cachedProfileStr ? JSON.parse(cachedProfileStr) : null;
@@ -114,6 +117,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initialized.current = true;
     
     if (!user) setIsLoading(true);
+
+    // Demo mode short-circuit
+    const demoMode = getFromStorage(SESSION_STORAGE_KEYS.DEMO_MODE) === 'true';
+    if (demoMode && cachedUserId) {
+      setSession(null);
+      setUser({ id: cachedUserId } as User);
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
@@ -156,6 +168,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Manual session refresh exposed to UI if needed
   const refreshSession = useCallback(async () => {
+    // Skip refresh in demo mode
+    if (getFromStorage(SESSION_STORAGE_KEYS.DEMO_MODE) === 'true') return;
+
     setIsLoading(true);
     try {
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
@@ -182,6 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Silent refresh on visibility change (tab focus) - no spinner
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
+        if (getFromStorage(SESSION_STORAGE_KEYS.DEMO_MODE) === 'true') return;
         if (user?.id) {
           console.log("[AuthSync] Tab visible - silently checking session");
           try {
@@ -311,6 +327,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // If demo mode, just clear
+    if (getFromStorage(SESSION_STORAGE_KEYS.DEMO_MODE) === 'true') {
+      clearAuthData();
+      router.push("/");
+      return;
+    }
+
     setIsLoading(true);
     try {
       await supabase.auth.signOut();
@@ -341,6 +364,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const enterDemoMode = async (passcode: string) => {
+    if (passcode !== 'Testup1929') return { ok: false, error: 'Invalid passcode' };
+    const demoUserId = 'demo-user';
+    const demoProfile: UserProfile = {
+      id: demoUserId,
+      full_name: 'Demo User',
+      avatar_url: null,
+      streak_count: 5,
+      weekly_goal_hours: 10,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      streak_last_active: null
+    };
+    
+    setUser({ id: demoUserId, email: 'demo@casebycase.app' } as User);
+    setProfile(demoProfile);
+    setSession(null);
+    saveToStorage(SESSION_STORAGE_KEYS.USER_ID, demoUserId);
+    saveToStorage(SESSION_STORAGE_KEYS.DEMO_MODE, 'true');
+    saveToStorage(SESSION_STORAGE_KEYS.USER_PROFILE, demoProfile);
+    return { ok: true };
+  };
+
   // Only log states for debugging
   console.log(`[AuthSync] State: isLoading=${isLoading}, user=${!!user}, profile=${!!profile}`);
 
@@ -357,7 +403,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithLinkedIn,
         signOut,
         updateProfile,
-        refreshSession
+        refreshSession,
+        enterDemoMode
       }}
     >
       {children}

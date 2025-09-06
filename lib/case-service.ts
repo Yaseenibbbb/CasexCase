@@ -4,6 +4,26 @@ import type { CaseSession, SkillAssessment } from "./database.types"
 export const caseService = {
   // Get all case sessions for the current user
   async getUserCaseSessions(userId: string) {
+    // Check if demo mode
+    const isDemo = sessionStorage.getItem('demoMode') === 'true';
+    if (isDemo) {
+      const mockSessions = [
+        {
+          id: 'demo-session-1',
+          user_id: userId,
+          case_type: 'go-no-go',
+          case_title: 'Go/No-Go Case',
+          duration_minutes: 25,
+          completed: true,
+          performance_rating: 'Good',
+          notes: 'Structured approach, good analysis',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          updated_at: new Date(Date.now() - 86400000).toISOString()
+        }
+      ];
+      return { data: mockSessions, error: null };
+    }
+
     const supabase = getSupabaseBrowserClient()
     const { data, error } = await supabase
       .from("case_sessions")
@@ -43,6 +63,29 @@ export const caseService = {
   // Create a new case session
   async createCaseSession(caseSession: Omit<CaseSession, "id" | "created_at" | "updated_at">) {
     console.log("[caseService] createCaseSession called with:", caseSession);
+    
+    // Check if demo mode
+    const isDemo = sessionStorage.getItem('demoMode') === 'true';
+    if (isDemo) {
+      // Return mock session for demo mode
+      const mockSession = {
+        id: `demo-session-${Date.now()}`,
+        ...caseSession,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        generated_case_data: {
+          caseFacts: {
+            ClientName: "TechFlow Solutions",
+            CompanyBackground: "A mid-size technology consulting firm",
+            initialPresentationText: "Hello, I'm Polly, your case interviewer. We'll be discussing TechFlow Solutions, a technology consulting firm considering expansion into healthcare tech consulting. Your task is to evaluate this market entry strategy. Let's start by hearing your approach."
+          },
+          exhibits: []
+        }
+      };
+      console.log("[caseService] Demo mode - returning mock session:", mockSession);
+      return { data: mockSession, error: null };
+    }
+
     const supabase = getSupabaseBrowserClient();
     try {
       // Restore .select().single() to get the created row ID
@@ -91,6 +134,17 @@ export const caseService = {
 
   // Get user stats
   async getUserStats(userId: string) {
+    // Check if demo mode
+    const isDemo = sessionStorage.getItem('demoMode') === 'true';
+    if (isDemo) {
+      const mockStats = {
+        completedCases: 3,
+        totalPracticeHours: 4.5,
+        skillAccuracy: { math: 85, structure: 78, creativity: 92 }
+      };
+      return { data: mockStats, error: null };
+    }
+
     const supabase = getSupabaseBrowserClient()
 
     // Get total completed cases

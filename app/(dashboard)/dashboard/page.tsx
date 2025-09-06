@@ -72,16 +72,24 @@ export default function DashboardPage() {
     if (!isLoading && user) {
       const fetchUserData = async () => {
         try {
-          const { data: stats } = await caseService.getUserStats(user.id)
-          if (stats) setUserStats(stats)
+          // Fetch user stats via API route
+          const statsResponse = await fetch(`/api/user-stats?userId=${user.id}`)
+          if (statsResponse.ok) {
+            const { data: stats } = await statsResponse.json()
+            if (stats) setUserStats(stats)
+          }
 
-          const { data: cases } = await caseService.getUserCaseSessions(user.id)
-          if (cases) {
-            setRecentCases(cases)
-            const pausedCase = cases.find((c: any) => !c.completed)
-            if (pausedCase) {
-              setPausedCase(pausedCase.case_type)
-              setShowResumeBanner(true)
+          // Fetch user cases via API route
+          const casesResponse = await fetch(`/api/user-cases?userId=${user.id}`)
+          if (casesResponse.ok) {
+            const { data: cases } = await casesResponse.json()
+            if (cases) {
+              setRecentCases(cases)
+              const pausedCase = cases.find((c: any) => !c.completed)
+              if (pausedCase) {
+                setPausedCase(pausedCase.case_type)
+                setShowResumeBanner(true)
+              }
             }
           }
         } catch (error) {
@@ -109,18 +117,35 @@ export default function DashboardPage() {
     }
 
     try {
-      // Use the new case service that creates a fresh session with generated case data
-      const id = await caseService.createCaseSession(user.id, {
-        caseType: selectedCase as any, // Cast to match the CaseTypeId type
-        company: 'N/A', // Optional company name
-        industry: ['Technology', 'Healthcare', 'Finance', 'Retail', 'Manufacturing', 'Energy', 'Telecommunications'][Math.floor(Math.random() * 7)],
-        role_focus: ['Strategy', 'Operations', 'Product', 'Marketing', 'Finance', 'Sales'][Math.floor(Math.random() * 6)],
-        geography: ['Global', 'North America', 'Europe', 'Asia', 'Middle East', 'Latin America'][Math.floor(Math.random() * 6)],
-        difficulty: ['beginner', 'intermediate', 'advanced'][Math.floor(Math.random() * 3)] as any,
-        time_limit_minutes: [25, 30, 35, 40][Math.floor(Math.random() * 4)],
-        exhibit_preferences: 'auto',
-        constraints_notes: 'Standard business assumptions apply'
+      // Use API route for case creation
+      const response = await fetch('/api/create-case', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          meta: {
+            caseType: selectedCase as any, // Cast to match the CaseTypeId type
+            company: 'N/A', // Optional company name
+            industry: ['Technology', 'Healthcare', 'Finance', 'Retail', 'Manufacturing', 'Energy', 'Telecommunications'][Math.floor(Math.random() * 7)],
+            role_focus: ['Strategy', 'Operations', 'Product', 'Marketing', 'Finance', 'Sales'][Math.floor(Math.random() * 6)],
+            geography: ['Global', 'North America', 'Europe', 'Asia', 'Middle East', 'Latin America'][Math.floor(Math.random() * 6)],
+            difficulty: ['beginner', 'intermediate', 'advanced'][Math.floor(Math.random() * 3)] as any,
+            time_limit_minutes: [25, 30, 35, 40][Math.floor(Math.random() * 4)],
+            exhibit_preferences: 'auto',
+            constraints_notes: 'Standard business assumptions apply'
+          }
+        })
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create case session')
+      }
+
+      const { data } = await response.json()
+      const id = data.id
 
       router.push(`/interview/${id}`)
     } catch (error) {

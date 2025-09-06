@@ -306,15 +306,24 @@ export default function InterviewPage() {
       if (generatedData?.sections?.interviewerScript) {
         // Extract opening prompt from interviewer script
         const scriptMatch = generatedData.sections.interviewerScript.match(/\*\*Opening Prompt[^*]*\*\*:?\s*([^*]+)/i);
-        initialPresentationText = scriptMatch ? scriptMatch[1].trim() : generatedData.sections.interviewerScript;
+        if (scriptMatch) {
+          initialPresentationText = scriptMatch[1].trim();
+        } else {
+          // If no specific opening prompt found, use the first paragraph or the whole script
+          const firstParagraph = generatedData.sections.interviewerScript.split('\n')[0];
+          initialPresentationText = firstParagraph || generatedData.sections.interviewerScript;
+        }
         initialExhibits = generatedData?.exhibits || [];
       } else if (generatedData?.caseFacts?.initialPresentationText) {
         // Fallback to old structure
         initialPresentationText = generatedData.caseFacts.initialPresentationText;
         initialExhibits = generatedData?.exhibits || [];
       } else if (generatedData?.caseMeta) {
-        // Handle demo mode structure
-        initialPresentationText = "Hello, I'm Polly, your case interviewer. We'll be discussing this case study. Your task is to work through the problem and provide a recommendation. Let's start by hearing your approach.";
+        // Handle demo mode structure - create a proper opening based on case data
+        const caseTitle = generatedData.caseMeta.title || 'this case study';
+        const industry = generatedData.caseMeta.industry || 'business';
+        const company = generatedData.caseMeta.company || 'the client';
+        initialPresentationText = `Hello, I'm Polly, your case interviewer. We'll be discussing ${caseTitle} involving ${company} in the ${industry} industry. Your task is to work through this problem and provide a recommendation. Let's start by hearing your approach.`;
         initialExhibits = generatedData?.exhibits || [];
       }
 
@@ -1093,6 +1102,7 @@ export default function InterviewPage() {
               <CardBody className="p-3">
                 <h3 className="text-base font-semibold mb-1.5 text-foreground line-clamp-1 border-l-2 border-primary pl-2">
                   {(
+                    caseSession?.generated_case_data?.caseMeta?.title ||
                     caseSession?.case_details?.title ||
                     caseSession?.generated_case_data?.caseFacts?.ClientName ||
                     caseSession?.generated_case_data?.caseFacts?.BuyerName ||
@@ -1103,6 +1113,7 @@ export default function InterviewPage() {
                 </h3>
                 <p className="text-sm text-foreground-600 mb-1.5 line-clamp-2">
                   {(
+                    caseSession?.generated_case_data?.sections?.background ||
                     caseSession?.generated_case_data?.caseFacts?.CompanyBackground ||
                     caseSession?.generated_case_data?.caseFacts?.BuyerBackground ||
                     caseSession?.generated_case_data?.caseFacts?.ClientBackground ||
@@ -1113,6 +1124,7 @@ export default function InterviewPage() {
                 </p>
                 <p className="text-xs text-foreground-500 mb-1 line-clamp-1">
                   {(
+                    caseSession?.generated_case_data?.caseMeta?.industry ||
                     caseSession?.generated_case_data?.caseFacts?.StrategicContext ||
                     caseSession?.generated_case_data?.caseFacts?.MarketContext ||
                     caseSession?.generated_case_data?.caseFacts?.Industry ||
@@ -1123,6 +1135,7 @@ export default function InterviewPage() {
                 <div className="text-xs text-foreground-500 line-clamp-2 bg-content2/30 p-2 rounded-sm">
                   <span className="font-medium text-primary-500">Task:</span>{" "}
                   {(
+                    caseSession?.generated_case_data?.sections?.tasks ||
                     caseSession?.generated_case_data?.caseFacts?.CoreTask ||
                     caseSession?.generated_case_data?.caseFacts?.ProblemStatement ||
                     caseSession?.generated_case_data?.caseFacts?.Task ||

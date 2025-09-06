@@ -68,6 +68,7 @@ export default function InterviewPage() {
   const [selectedExhibitId, setSelectedExhibitId] = useState<number | null>(null)
   const [panelExhibitIndex, setPanelExhibitIndex] = useState(0)
   const [sessionVoiceId, setSessionVoiceId] = useState<string | null>(null)
+  const [caseContext, setCaseContext] = useState<any>(null) // Store structured case data for AI context
   
   // --- Add state for conditional rendering (to replace comments) ---
   const [showLeftPanel_DEBUG, setShowLeftPanel_DEBUG] = useState(true); 
@@ -260,6 +261,18 @@ export default function InterviewPage() {
         setShowLeftPanel_DEBUG(true);
         setShowRightPanel_DEBUG(true);
         
+        // Store structured case context for AI evaluation
+        if (sessionData.generated_case_data) {
+          setCaseContext({
+            caseMeta: sessionData.generated_case_data.caseMeta,
+            sections: sessionData.generated_case_data.sections,
+            exhibits: sessionData.generated_case_data.exhibits,
+            solutionGuide: sessionData.generated_case_data.solutionGuide,
+            caseType: sessionData.case_type,
+            caseTitle: sessionData.case_title
+          });
+        }
+        
         // Initialize messages if empty
         if (!messages.length && sessionData.case_type && sessionData.generated_case_data) {
           const caseType = CASE_TYPES.find(type => type.id === sessionData.case_type);
@@ -314,29 +327,29 @@ export default function InterviewPage() {
           initialPresentationText = firstParagraph || generatedData.sections.interviewerScript;
         }
         
-        // Add full case details to the presentation
+        // Add full case details to the presentation (TTS-friendly)
         const caseTitle = generatedData.caseMeta?.title || 'Case Study';
         const background = generatedData.sections?.background || '';
         const objectives = generatedData.sections?.objectives || '';
         const tasks = generatedData.sections?.tasks || '';
         
-        // Create comprehensive case presentation
+        // Create comprehensive case presentation (TTS-friendly, no markdown)
         let fullCasePresentation = initialPresentationText;
         
         if (caseTitle) {
-          fullCasePresentation += `\n\n**${caseTitle}**`;
+          fullCasePresentation += `\n\n${caseTitle}`;
         }
         
         if (background) {
-          fullCasePresentation += `\n\n**Background:**\n${background}`;
+          fullCasePresentation += `\n\nBackground: ${background}`;
         }
         
         if (objectives) {
-          fullCasePresentation += `\n\n**Objectives:**\n${objectives}`;
+          fullCasePresentation += `\n\nObjectives: ${objectives}`;
         }
         
         if (tasks) {
-          fullCasePresentation += `\n\n**Your Task:**\n${tasks}`;
+          fullCasePresentation += `\n\nYour Task: ${tasks}`;
         }
         
         initialPresentationText = fullCasePresentation;
@@ -356,11 +369,11 @@ export default function InterviewPage() {
         let fullCasePresentation = `Hello, I'm Polly, your case interviewer. We'll be discussing ${caseTitle} involving ${company} in the ${industry} industry.`;
         
         if (background) {
-          fullCasePresentation += `\n\n**Background:**\n${background}`;
+          fullCasePresentation += `\n\nBackground: ${background}`;
         }
         
         if (tasks) {
-          fullCasePresentation += `\n\n**Your Task:**\n${tasks}`;
+          fullCasePresentation += `\n\nYour Task: ${tasks}`;
         } else {
           fullCasePresentation += `\n\nYour task is to work through this problem and provide a recommendation.`;
         }

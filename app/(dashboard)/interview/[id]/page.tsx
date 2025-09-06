@@ -2,6 +2,9 @@
 
 import type React from "react"
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -311,7 +314,55 @@ export default function InterviewPage() {
          throw new Error("Generated case data provided to trigger function is missing.");
       }
       
-      // Handle both old and new case data structures
+      // Store case context for the AI
+      setCaseContext({
+        caseMeta: generatedData.caseMeta || {},
+        sections: generatedData.sections || {},
+        exhibits: generatedData.exhibits || [],
+        solutionGuide: generatedData.solutionGuide || null
+      });
+
+      // Try to use the new live interviewer system first
+      try {
+        const response = await fetch('/api/ai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'interview',
+            caseMeta: generatedData.caseMeta || {},
+            userMessage: 'Start the interview with the first message template.'
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const initialPresentationText = data.text;
+          const initialExhibits = generatedData?.exhibits || [];
+
+          // Add the initial AI message
+          const initialMessage = {
+            id: Date.now(),
+            type: 'ai' as const,
+            content: initialPresentationText,
+            timestamp: new Date(),
+            isTyping: false
+          };
+
+          setMessages([initialMessage]);
+          
+          // Start TTS for the initial presentation
+          if (isTtsEnabled && initialPresentationText) {
+            await startSentenceTTS(initialPresentationText);
+          }
+
+          setInteractionState('USER_TURN');
+          return;
+        }
+      } catch (apiError) {
+        console.warn('[TRIGGER_INIT] New AI chat API failed, falling back to old system:', apiError);
+      }
+      
+      // Fallback to old system
       let initialPresentationText = '';
       let initialExhibits = [];
       
@@ -800,17 +851,18 @@ export default function InterviewPage() {
     }));
 
     try {
-        console.log(`[PROCESS] Sending to /api/chat with caseType: ${caseSession?.case_type}`);
+        console.log(`[PROCESS] Sending to /api/ai-chat with caseType: ${caseSession?.case_type}`);
 
-        const response = await fetch('/api/chat', {
+        // Try new live interviewer system first
+        const response = await fetch('/api/ai-chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                messages: messagesForApi,
-                caseType: caseSession?.case_type,
-                generatedCaseData: caseSession?.generated_case_data 
+                mode: 'interview',
+                caseMeta: caseContext?.caseMeta || caseSession?.generated_case_data?.caseMeta || {},
+                userMessage: userInput
             }),
         });
 
@@ -820,7 +872,7 @@ export default function InterviewPage() {
         }
 
         const data = await response.json();
-        const rawAiResponse = data.response;
+        const rawAiResponse = data.text;
 
         if (rawAiResponse) {
             const { prose, exhibits: newExhibits } = parseReply(rawAiResponse);
@@ -882,13 +934,86 @@ export default function InterviewPage() {
         }
 
     } catch (error) {
-        console.error("Error sending/receiving message:", error);
-        toast({
-            title: "Communication Error",
-            description: error instanceof Error ? error.message : "Could not communicate with the AI.",
-            variant: "destructive",
-        });
-        setInteractionState('USER_TURN'); // Allow user to try again on error
+        console.error("Error with new AI chat API, falling back to old system:", error);
+        
+        // Fallback to old chat API
+        try {
+            const fallbackResponse = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    messages: messagesForApi,
+                    caseType: caseSession?.case_type,
+                    generatedCaseData: caseSession?.generated_case_data 
+                }),
+            });
+
+            if (fallbackResponse.ok) {
+                const fallbackData = await fallbackResponse.json();
+                const rawAiResponse = fallbackData.response;
+
+                if (rawAiResponse) {
+                    const { prose, exhibits: newExhibits } = parseReply(rawAiResponse);
+                    console.log("[PROCESS] Fallback - Parsed AI response - Prose:", prose);
+
+                    const currentExhibitId = newExhibits.length > 0 ? newExhibits[0].id : null; 
+
+                    const messageId = Date.now();
+                    const aiResponseMessage = {
+                        id: messageId,
+                        role: "assistant" as const,
+                        content: "",
+                        timestamp: new Date().toISOString(),
+                        hasExhibit: newExhibits.length > 0,
+                        exhibitId: currentExhibitId,
+                        isEnd: fallbackData.isEnd || false, 
+                    };
+                    setMessages(prevMessages => [...prevMessages, aiResponseMessage]);
+
+                    if (newExhibits.length > 0) {
+                        setExhibits(prevExhibits => [...prevExhibits, ...newExhibits]);
+                    }
+
+                    if (isTtsEnabled && prose) {
+                        startSentenceTTS(prose); 
+                    } else {
+                        const fullMessage = {
+                            id: Date.now(),
+                            role: "assistant" as const,
+                            content: prose,
+                            timestamp: new Date().toISOString(),
+                            hasExhibit: newExhibits.length > 0,
+                            exhibitId: newExhibits.length > 0 ? newExhibits[0].id : null,
+                            isEnd: fallbackData.isEnd || false, 
+                        };
+                        setMessages(prevMessages => [...prevMessages, fullMessage]);
+                        
+                        if (fullMessage.isEnd) {
+                            setInteractionState('IDLE');
+                        } else {
+                            setInteractionState('USER_TURN');
+                        }
+                    }
+                } else {
+                    console.error("[PROCESS] Fallback - No AI response received");
+                    setInteractionState('USER_TURN');
+                }
+            } else {
+                console.error("[PROCESS] Fallback API also failed");
+                setInteractionState('USER_TURN');
+            }
+        } catch (fallbackError) {
+            console.error("[PROCESS] Fallback also failed:", fallbackError);
+            toast({
+                title: "Communication Error",
+                description: "Could not communicate with the AI. Please try again.",
+                variant: "destructive",
+            });
+            setInteractionState('USER_TURN');
+        }
+        
         // Reset TTS state as well
         setIsTTSPlaying(false);
         setTtsSentenceQueue([]);

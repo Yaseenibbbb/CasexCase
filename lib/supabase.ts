@@ -21,6 +21,6 @@ export const getSupabaseBrowserClient = () => {
 // Server-side client
 export const createServerClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
-  return createClient<Database>(supabaseUrl, supabaseAnonKey)
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string
+  return createClient<Database>(supabaseUrl, supabaseServiceKey)
 }

@@ -210,13 +210,47 @@ export async function POST(req: Request) {
     // Extract structured data if present
     const structuredData = extractStructuredData(aiText);
 
-    // Clean the response text if structured data was found (using [\s\S] instead of . with s flag)
-    // Correctly escaped regex:
-    const cleanedResponseText = aiText?.replace(/<JSON_DATA>[\s\S]*?<\/JSON_DATA>/, '').trim() || null;
+    // Extract suggestions from the response
+    let suggestions: string[] = [];
+    try {
+      const suggestionMatch = aiText.match(/\{"suggestions":\s*\[(.*?)\]\}/s);
+      if (suggestionMatch) {
+        const suggestionText = suggestionMatch[1];
+        suggestions = suggestionText
+          .split(',')
+          .map(s => s.trim().replace(/^"|"$/g, ''))
+          .filter(s => s.length > 0);
+      }
+    } catch (e) {
+      console.warn('Failed to parse suggestions:', e);
+    }
 
+    // Clean the response text - remove both JSON_DATA and suggestions JSON
+    let cleanedResponseText = aiText
+      ?.replace(/<JSON_DATA>[\s\S]*?<\/JSON_DATA>/, '') // Remove structured data
+      ?.replace(/\{"suggestions":\s*\[.*?\]\}/s, '') // Remove suggestions JSON
+      ?.trim() || null;
 
-    // Respond with the complete text response (and potentially structured data)
-    return NextResponse.json({ response: cleanedResponseText, structuredData: structuredData });
+    // If no suggestions were found, provide defaults based on context
+    if (suggestions.length === 0) {
+      const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+      if (lastUserMessage.includes('framework')) {
+        suggestions = ["Explain Porter's Five Forces", "Compare SWOT and PESTLE", "How to apply MECE?"];
+      } else if (lastUserMessage.includes('practice') || lastUserMessage.includes('drill')) {
+        suggestions = ["Market Sizing Practice", "Profitability Diagnosis Drill", "Brainstorming Practice"];
+      } else if (lastUserMessage.includes('critique') || lastUserMessage.includes('feedback')) {
+        suggestions = ["Critique my approach (I'll paste)", "How can I improve clarity?", "Is my structure logical?"];
+      } else {
+        suggestions = ["Explain a common framework", "Give me a practice question", "How to structure my answer?"];
+      }
+    }
+
+    // Respond with the complete text response, structured data, and suggestions
+    return NextResponse.json({ 
+      response: cleanedResponseText, 
+      structuredData: structuredData,
+      suggestions: suggestions
+    });
 
   } catch (error) {
     console.error("Error in /api/chat:", error);

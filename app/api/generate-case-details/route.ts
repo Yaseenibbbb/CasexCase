@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
+import { buildCasePackGeneratorSystem } from '@/prompts/caseGenerator';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -13,8 +18,14 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
+  let sessionId: string | undefined;
+  let caseType: string | undefined;
+  
   try {
-    const { sessionId, caseType, useCase, company, industry, roleFocus, geography, difficulty, timeLimitMinutes, includeSolutionGuide, exhibitPreferences, constraintsNotes } = await request.json();
+    const requestBody = await request.json();
+    sessionId = requestBody.sessionId;
+    caseType = requestBody.caseType;
+    const { useCase, company, industry, roleFocus, geography, difficulty, timeLimitMinutes, includeSolutionGuide, exhibitPreferences, constraintsNotes } = requestBody;
     
     console.log(`[API generate-case-details] Received request for sessionId: ${sessionId}, caseType: ${caseType}`);
 
@@ -28,107 +39,24 @@ export async function POST(request: NextRequest) {
 
     // Generate case using the new CaseByCase prompt system
     console.log(`[API generate-case-details] Generating case with CaseByCase prompt system...`);
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are CaseByCase's Case Pack Generator. When invoked, you will produce a complete, interview-ready case study for the provided use case. Your output must be TTS-friendly for ElevenLabs speech synthesis AND machine-readable for the Exhibit Panel.
+    
+    // Add entropy for uniqueness
+    const entropy = `${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2))}`;
+    
+    const systemPrompt = buildCasePackGeneratorSystem({
+      useCase: useCase || 'A business strategy case requiring analysis and recommendation',
+      company: company || 'N/A',
+      industry: industry || 'Technology',
+      roleFocus: roleFocus || 'Strategy',
+      geography: geography || 'Global',
+      difficulty: difficulty || 'intermediate',
+      timeLimitMinutes: timeLimitMinutes || 30,
+      includeSolutionGuide: includeSolutionGuide || false,
+      exhibitPreferences: exhibitPreferences || 'auto',
+      constraintsNotes: constraintsNotes || 'Standard business assumptions apply'
+    });
 
-CRITICAL TTS REQUIREMENTS:
-- NO asterisks, markdown formatting, or special characters that break TTS
-- Use plain text only - no bold, italics, or formatting symbols
-- Write in conversational, natural speech patterns
-- Use short, clear sentences that flow well when spoken
-- Avoid complex punctuation that confuses TTS engines
-- Use "and" instead of "&", spell out numbers, avoid abbreviations
-
-GOALS
-- Generate a realistic case tailored to the input use case and metadata
-- Provide clear narrative, tasks, and 2–5 well-scoped exhibits
-- Create TTS-friendly content that sounds natural when spoken
-- Include structured data for AI context and evaluation
-
-OUTPUT RULES (critical)
-- Write ALL text content for TTS - no markdown, no asterisks, no special formatting
-- Use the exact delimiters below for machine parsing
-- Do NOT wrap EXHIBIT blocks or META/SOLUTION blocks in code fences
-- Prefer whole numbers and simple decimals; show units
-- Charts must include a compact JSON spec compatible with Recharts
-- Images must include a resolvable URL (or omit if none)
-- If numbers are fabricated, keep them internally consistent
-
-DELIMITERS (use exactly)
-EXHIBIT BLOCKS:
-[[EXHIBIT:TABLE|id=E#|title="..."]]
-<markdown table here>
-[[/EXHIBIT]]
-
-[[EXHIBIT:CHART|id=E#|title="..."|type=line|xKey="<x>" ]]
-{"data":[{"<x>":"...","<seriesKey>":<number>, ...}], "lines":[{"key":"<seriesKey>","name":"<Legend Label>"}]}
-[[/EXHIBIT]]
-
-[[EXHIBIT:CHART|id=E#|title="..."|type=bar|xKey="<x>" ]]
-{"data":[...], "bars":[{"key":"<seriesKey>","name":"<Legend Label>"}]}
-[[/EXHIBIT]]
-
-[[EXHIBIT:CHART|id=E#|title="..."|type=pie|nameKey="<name>"|valueKey="<value>"]]
-{"data":[{"<name>":"A","<value>":123}, ...]}
-[[/EXHIBIT]]
-
-[[EXHIBIT:IMAGE|id=E#|title="..."|url="https://..."]]
-[[/EXHIBIT]]
-
-META + SOLUTION:
-[[CASE_META]]
-{"title":"...", "industry":"...", "company":"...", "geography":"...", "difficulty":"...", "time_limit":<minutes>, "role_focus":"...", "exhibits":[{"id":"E1","type":"table","title":"..."}, ...]}
-[[/CASE_META]]
-
-[[SOLUTION_GUIDE_START]]
-... your step-by-step solution, key calcs, and model answers ...
-[[SOLUTION_GUIDE_END]]
-
-STRUCTURE (produce all sections - ALL TEXT MUST BE TTS-FRIENDLY)
-# {company} — {concise_case_title_based_on_use_case}
-
-## Background
-Write one natural paragraph that sounds like how a human would speak. Start with "Let me give you some background" or "Here's the situation" and explain the context conversationally. Include geography if relevant. Make it sound like you're talking to someone, not writing a document.
-
-## Objectives
-Write objectives as natural speech. Start with "Your main goals here are to" or "What we need you to do is" and list the objectives as flowing sentences that sound like spoken conversation. Do not use bullet points or dashes.
-
-## Constraints and Assumptions
-Write constraints as natural conversation. Start with "A few things to keep in mind" or "Here are some important constraints" and explain them as if you're speaking to the candidate. Make it conversational, not formal.
-
-## Candidate Tasks
-Describe the task as if you're explaining it to someone in person. Start with "So your job is to" or "What I need from you is" and explain what they need to do in natural, conversational language.
-
-## Data and Exhibits
-Provide two to five exhibits honoring the preferences. Use E1 through E5 IDs. Make each exhibit referenced later in the prompts and solution.
-
-## Interviewer Script
-Opening Prompt: Write one concise paragraph inviting the candidate to restate the objective and outline their approach. This will be spoken directly to the candidate.
-
-Probing Questions: List six to ten questions touching market size, customer segments, operations bottlenecks, unit economics, risks, and recommendation. Write as natural questions that flow in conversation.
-
-Hints and Framework Nudges: List three to five hints. For example: Consider demand-side versus supply-side constraints, Decompose margin equals price minus variable cost minus acquisition. Write as conversational guidance.
-
-Checkpoint Questions: List two to three quick calculational checks referencing exhibit IDs. Write as natural questions.
-
-Wrap-Up Prompt: Ask for final recommendation, risks, and next steps. Write as a natural conclusion to the interview.
-
-## Evaluation Rubric
-Structure and MECE thinking: zero to five points. Quantitative accuracy: zero to five points. Business judgment: zero to five points. Communication and clarity: zero to five points. Data usage: zero to five points. Define what five points looks like for each category.
-
-## Expected Deliverables
-A sixty-second problem framing, two to three insights backed by exhibits, and a clear recommendation with quantified impact.
-
-## Notes for the Candidate
-What is out of scope, any definitions, and time reminders. Time limit is {time_limit_minutes} minutes.`
-        },
-        {
-          role: "user",
-          content: `Generate a complete case study with these inputs:
+    const userPromptString = `Generate a complete case study with these inputs:
 
 - use_case: ${useCase || 'A business strategy case requiring analysis and recommendation'}
 - company: ${company || 'N/A'}
@@ -140,59 +68,91 @@ What is out of scope, any definitions, and time reminders. Time limit is {time_l
 - include_solution_guide: ${includeSolutionGuide || false}
 - exhibit_preferences: ${exhibitPreferences || 'auto'}
 - constraints_notes: ${constraintsNotes || 'Standard business assumptions apply'}
+- entropy_seed: ${entropy}
 
-Create a realistic, engaging case study with 2-5 exhibits and all required sections.`
+Create a realistic, engaging case study with 2-5 exhibits and all required sections.`;
+
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+      temperature: 0.85,
+      top_p: 1,
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: userPromptString
         }
       ],
-      temperature: 0.7,
     });
 
-    const responseText = completion.choices[0]?.message?.content;
+    const responseText = completion.choices[0]?.message?.content?.trim();
     console.log(`[API generate-case-details] Raw response from OpenAI:`, responseText);
 
     if (!responseText) {
-      throw new Error('No response from OpenAI');
+      throw new Error("OpenAI returned no content");
     }
 
     // Parse the structured response
     const parsedData = parseCaseResponse(responseText);
     console.log(`[API generate-case-details] Successfully parsed case response.`);
 
-    // Update the case session with generated data
-    console.log(`[API generate-case-details] Updating case session in Supabase...`);
-    const { error: updateError } = await supabase
-      .from('case_sessions')
-      .update({ 
-        generated_case_data: parsedData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', sessionId);
+    // Update the case session with generated data (only for non-demo sessions)
+    if (!isDemo) {
+      console.log(`[API generate-case-details] Updating case session in Supabase...`);
+      const { error: updateError } = await supabase
+        .from('case_sessions')
+        .update({ 
+          generated_case_data: parsedData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', sessionId);
 
-    if (updateError) {
-      console.error(`[API generate-case-details] Supabase update failed:`, updateError);
-      // Return the generated data anyway, even if we can't save it
-      console.log(`[API generate-case-details] Supabase update failed, using generated data:`, updateError);
+      if (updateError) {
+        console.error(`[API generate-case-details] Supabase update failed:`, updateError);
+        // Return the generated data anyway, even if we can't save it
+        console.log(`[API generate-case-details] Supabase update failed, using generated data:`, updateError);
+      }
     }
 
     console.log(`[API generate-case-details] Successfully generated and saved data for session ${sessionId}.`);
-    return NextResponse.json({ 
-      success: true, 
-      data: parsedData,
-      sessionId: sessionId 
+    console.info("[generate-case-details] success:", { 
+      sessionId, 
+      caseTitle: (parsedData?.caseMeta as any)?.title || "Unknown",
+      company: (parsedData?.caseMeta as any)?.company || "Unknown",
+      fallback: false 
     });
+    return NextResponse.json(
+      { 
+        success: true, 
+        data: parsedData,
+        sessionId: sessionId,
+        fallback: false
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
 
   } catch (error) {
-    console.error(`[API generate-case-details] Error:`, error);
-    
-    // Return mock data as fallback
-    const mockData = generateMockCaseData(caseType);
+    console.error("[API generate-case-details] Error:", error);
 
-    return NextResponse.json({ 
-      success: true, 
-      data: mockData,
-      fallback: true,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    // Only use mock when the session is explicitly a demo
+    const isDemo = typeof sessionId === "string" && sessionId.startsWith("demo-session-");
+    if (isDemo) {
+      console.info("[generate-case-details] fallback:", { reason: "demo session", isDemo, sessionId });
+      const mockData = generateMockCaseData(caseType);
+      return NextResponse.json(
+        { success: true, data: mockData, fallback: true },
+        { headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    // Otherwise, surface the error so the UI can show a toast instead of a fake case
+    return NextResponse.json(
+      { success: false, error: (error as Error).message ?? "Unknown error" },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
+    );
   }
 }
 
@@ -204,7 +164,7 @@ function parseCaseResponse(responseText: string) {
 
   while ((match = exhibitRegex.exec(responseText)) !== null) {
     const [, type, attributes, content] = match;
-    const attrObj = {};
+    const attrObj: Record<string, string> = {};
     attributes.split('|').forEach(attr => {
       const [key, value] = attr.split('=');
       if (key && value) {
@@ -261,10 +221,10 @@ function extractSection(text: string, sectionTitle: string): string {
   return match ? match[1].trim() : '';
 }
 
-function generateMockCaseData(caseType: string) {
+function generateMockCaseData(caseType?: string) {
   return {
     caseMeta: {
-      title: `${caseType} Case Study`,
+      title: `${caseType || 'Mock'} Case Study`,
       industry: "Technology",
       company: "TechFlow Solutions",
       geography: "Global",

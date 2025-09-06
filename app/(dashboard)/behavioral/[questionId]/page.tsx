@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link'; // Import Link for navigation
+import Link from 'next/link';
 import { CATEGORIZED_BEHAVIORAL_QUESTIONS, BehavioralQuestion, BehavioralQuestionCategory } from '@/lib/data';
 import {
   Card,
@@ -20,14 +20,14 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb" // Import Breadcrumb components
-import { Skeleton } from "@/components/ui/skeleton" // Import Skeleton
-import { Mic, MicOff, PauseCircle, PlayCircle, Loader2, Sparkles, CheckCircle2, AlertTriangle, ListChecks, Lightbulb, ArrowRight } from 'lucide-react'; // Add recording icons and Loader2, Sparkles, and new icons
+} from "@/components/ui/breadcrumb"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Mic, MicOff, PauseCircle, PlayCircle, Loader2, Sparkles, CheckCircle2, AlertTriangle, ListChecks, Lightbulb, ArrowRight, Copy, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
-import React, { useState, useEffect, useRef } from 'react'; // Import hooks
-import { toast } from '@/components/ui/use-toast'; // Import toast
-import ReactMarkdown from 'react-markdown'; // Import for rendering feedback
-import remarkGfm from 'remark-gfm'; // Import for markdown rendering
+import React, { useState, useEffect, useRef, useMemo, useCallback, startTransition } from 'react';
+import { toast } from '@/components/ui/use-toast';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Define the structure for parsed feedback
 interface ParsedFeedback {
@@ -35,10 +35,10 @@ interface ParsedFeedback {
   "Areas for Improvement"?: string;
   "STAR Method Breakdown"?: string;
   "Revised Example Answer"?: string;
-  [key: string]: string | undefined; // Allow other potential keys if AI adds extra sections
+  [key: string]: string | undefined;
 }
 
-// Helper function to parse feedback markdown into sections
+// Helper function to parse feedback markdown into sections with fallback
 const parseFeedback = (feedback: string): ParsedFeedback => {
   const sections: ParsedFeedback = {};
   const knownHeadings = [
@@ -47,6 +47,7 @@ const parseFeedback = (feedback: string): ParsedFeedback => {
     "STAR Method Breakdown",
     "Revised Example Answer",
   ];
+  
   // Regex to split by '## Heading\n' - ensures we capture content after the heading newline
   const parts = feedback.split(/##\s+(Strengths|Areas for Improvement|STAR Method Breakdown|Revised Example Answer)\s*\n/);
 
@@ -72,20 +73,28 @@ const parseFeedback = (feedback: string): ParsedFeedback => {
       }
   }
 
+  // Fallback: if no known sections found, treat the whole string as "Revised Example Answer"
+  if (Object.keys(sections).length === 0) {
+    sections["Revised Example Answer"] = feedback.trim();
+  }
+
   return sections;
 };
 
 export default function BehavioralQuestionPage() {
-  const params = useParams();
-  const router = useRouter(); // Initialize router
-  const categorySlug = params.categorySlug as string;
-  const questionSlug = params.questionSlug as string;
+  const { categorySlug, questionSlug } = useParams() as { categorySlug: string; questionSlug: string };
+  const router = useRouter();
 
   // Find the current category and question index based on slugs
   const currentCategory = CATEGORIZED_BEHAVIORAL_QUESTIONS[categorySlug];
   const initialQuestionIndex = currentCategory?.questions.findIndex(
     (q) => q.slug === questionSlug
   ) ?? -1;
+
+  // Early return if category/question not found - prevents flashing UI
+  if (!currentCategory || initialQuestionIndex === -1) {
+    return <div className="container mx-auto px-4 py-8 text-center">Not found.</div>;
+  }
 
   // State for current question index *within the category*
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(initialQuestionIndex);
@@ -94,27 +103,59 @@ export default function BehavioralQuestionPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const audioChunks = useRef<Blob[]>([]);
-  const [userAnswer, setUserAnswer] = useState(""); // State for typed answer
-  const [parsedFeedback, setParsedFeedback] = useState<ParsedFeedback | null>(null); // State for parsed feedback object
+  const [userAnswer, setUserAnswer] = useState("");
+  const [parsedFeedback, setParsedFeedback] = useState<ParsedFeedback | null>(null);
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
 
-  // Derive the current question object based on the index
-  const currentQuestion = currentCategory?.questions[currentQuestionIndex];
+  // Memoized derived values to avoid recompute churn
+  const currentQuestion = useMemo(() => 
+    currentCategory?.questions[currentQuestionIndex], 
+    [currentCategory, currentQuestionIndex]
+  );
+  
+  const isLastQuestionInCategory = useMemo(() => 
+    currentQuestionIndex === currentCategory.questions.length - 1,
+    [currentQuestionIndex, currentCategory.questions.length]
+  );
 
-  // Handle cases where category or question is not found
+  // Autosave functionality
   useEffect(() => {
-    if (!currentCategory || initialQuestionIndex === -1) {
-        toast({ title: "Question or Category not found", variant: "destructive" });
-        // Optionally redirect
-        // router.replace('/dashboard');
-    }
-    // Reset state when slugs change (navigating directly to a new question URL)
-    resetForNewQuestion(); 
-    setCurrentQuestionIndex(initialQuestionIndex); // Ensure index is correct if params change
-  }, [categorySlug, questionSlug, currentCategory, initialQuestionIndex, router]);
+    const key = `behav:${categorySlug}/${questionSlug}`;
+    const saved = localStorage.getItem(key);
+    if (saved) setUserAnswer(saved);
+  }, [categorySlug, questionSlug]);
 
-  // Setup Media Recorder and Mic Permissions
+  useEffect(() => {
+    const key = `behav:${categorySlug}/${questionSlug}`;
+    const id = setTimeout(() => localStorage.setItem(key, userAnswer), 400);
+    return () => clearTimeout(id);
+  }, [categorySlug, questionSlug, userAnswer]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !isGeneratingFeedback && userAnswer.trim())
+        handleGetFeedback();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isGeneratingFeedback, userAnswer]);
+
+  // Prefetch next question for smoother navigation
+  useEffect(() => { 
+    const next = currentCategory?.questions[currentQuestionIndex + 1]?.slug;
+    if (next) router.prefetch?.(`/behavioral/${categorySlug}/${next}`);
+  }, [categorySlug, currentCategory, currentQuestionIndex, router]);
+
+  // Reset state when slugs change (navigating directly to a new question URL)
+  useEffect(() => {
+    resetForNewQuestion(); 
+    setCurrentQuestionIndex(initialQuestionIndex);
+  }, [categorySlug, questionSlug, initialQuestionIndex]);
+
+  // Setup Media Recorder with proper cleanup
   useEffect(() => {
     const setupMediaRecorder = async () => {
       try {
@@ -126,8 +167,16 @@ export default function BehavioralQuestionPage() {
           });
           return;
         }
+        
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
+        streamRef.current = stream;
+        
+        // Audio format fallback
+        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+        
+        const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
 
         recorder.ondataavailable = (e) => {
           if (e.data.size > 0) {
@@ -136,10 +185,9 @@ export default function BehavioralQuestionPage() {
         };
 
         recorder.onstop = () => {
-          const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+          const audioBlob = new Blob(audioChunks.current, { type: mime || 'audio/webm' });
           console.log("Recording stopped. Audio Blob:", audioBlob);
-          // TODO: Send blob for transcription/analysis or create playback URL
-          audioChunks.current = []; // Clear chunks
+          audioChunks.current = [];
         };
 
         setMediaRecorder(recorder);
@@ -155,14 +203,15 @@ export default function BehavioralQuestionPage() {
 
     setupMediaRecorder();
 
-    // Cleanup function
+    // Cleanup function with proper stream reference
     return () => {
-      mediaRecorder?.stream.getTracks().forEach(track => track.stop());
+      streamRef.current?.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     };
-  }, []); // Run only once on mount
+  }, []);
 
-  // Recording Handlers
-  const handleStartRecording = () => {
+  // Recording Handlers with useCallback
+  const handleStartRecording = useCallback(() => {
     if (mediaRecorder && mediaRecorder.state === "inactive") {
       audioChunks.current = [];
       mediaRecorder.start();
@@ -170,53 +219,52 @@ export default function BehavioralQuestionPage() {
       setIsPaused(false);
       toast({ title: "Recording Started" });
     }
-  };
+  }, [mediaRecorder]);
 
-  const handleStopRecording = () => {
+  const handleStopRecording = useCallback(() => {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop(); // onstop handler will process the blob
+      mediaRecorder.stop();
     }
     setIsRecording(false);
     setIsPaused(false);
     toast({ title: "Recording Stopped" });
-  };
+  }, [mediaRecorder]);
 
-  const handlePauseRecording = () => {
+  const handlePauseRecording = useCallback(() => {
     if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.pause();
       setIsPaused(true);
       toast({ title: "Recording Paused" });
     }
-  };
+  }, [mediaRecorder]);
 
-  const handleResumeRecording = () => {
+  const handleResumeRecording = useCallback(() => {
     if (mediaRecorder && mediaRecorder.state === "paused") {
       mediaRecorder.resume();
       setIsPaused(false);
       toast({ title: "Recording Resumed" });
     }
-  };
+  }, [mediaRecorder]);
 
   // Function to reset state for a new question
-  const resetForNewQuestion = () => {
-      setUserAnswer("");
-      setParsedFeedback(null);
-      setIsGeneratingFeedback(false);
-      // Optionally reset recording state if needed
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-          handleStopRecording(); // Stop recording if active
-      }
-      setIsRecording(false);
-      setIsPaused(false);
-  };
+  const resetForNewQuestion = useCallback(() => {
+    setUserAnswer("");
+    setParsedFeedback(null);
+    setIsGeneratingFeedback(false);
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      handleStopRecording();
+    }
+    setIsRecording(false);
+    setIsPaused(false);
+  }, [mediaRecorder, handleStopRecording]);
 
   // Function to get AI Feedback
-  const handleGetFeedback = async () => {
+  const handleGetFeedback = useCallback(async () => {
     if (!userAnswer.trim()) {
       toast({ title: "Please enter your answer first.", variant: "destructive" });
       return;
     }
-    if (!currentQuestion) return; // Check based on current index
+    if (!currentQuestion) return;
 
     setIsGeneratingFeedback(true);
     setParsedFeedback(null);
@@ -238,11 +286,10 @@ export default function BehavioralQuestionPage() {
       }
 
       const data = await response.json();
-      // Parse the raw feedback and set the structured state
       if (data.feedback && typeof data.feedback === 'string') {
-          setParsedFeedback(parseFeedback(data.feedback));
+        setParsedFeedback(parseFeedback(data.feedback));
       } else {
-          throw new Error("Invalid feedback format received from API.");
+        throw new Error("Invalid feedback format received from API.");
       }
 
     } catch (error) {
@@ -252,40 +299,39 @@ export default function BehavioralQuestionPage() {
         description: error instanceof Error ? error.message : "Could not retrieve feedback.",
         variant: "destructive",
       });
-      setParsedFeedback(null); // Ensure parsed feedback is null on error
+      setParsedFeedback(null);
     } finally {
       setIsGeneratingFeedback(false);
     }
-  };
+  }, [userAnswer, currentQuestion]);
 
-  // Function to navigate to the next question *within the category*
-  const handleNextQuestion = () => {
+  // Function to navigate to the next question with smooth transitions
+  const handleNextQuestion = useCallback(() => {
     if (!currentCategory) return;
     const nextIndex = currentQuestionIndex + 1;
     if (nextIndex < currentCategory.questions.length) {
       const nextQuestion = currentCategory.questions[nextIndex];
       resetForNewQuestion();
       setCurrentQuestionIndex(nextIndex);
-      // Update URL: Only the questionSlug changes
-      router.push(`/behavioral/${categorySlug}/${nextQuestion.slug}`, { scroll: false });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      startTransition(() => {
+        router.push(`/behavioral/${categorySlug}/${nextQuestion.slug}`, { scroll: true });
+      });
     } else {
       toast({ title: `Category Complete!`, description: `You finished all questions in ${currentCategory.title}.` });
-      // Maybe navigate back to dashboard or category list?
-      // router.push('/dashboard'); 
     }
-  };
+  }, [currentCategory, currentQuestionIndex, resetForNewQuestion, router, categorySlug]);
 
-  // Early return if category/question not found initially
-  if (!currentCategory || !currentQuestion) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p>Loading question or category/question not found...</p>
-      </div>
-    );
-  }
+  // Function to clear feedback and allow re-editing
+  const handleTryAgain = useCallback(() => {
+    setParsedFeedback(null);
+  }, []);
 
-  const isLastQuestionInCategory = currentQuestionIndex === currentCategory.questions.length - 1;
+  // Function to copy answer to clipboard
+  const handleCopyAnswer = useCallback((content: string) => {
+    navigator.clipboard.writeText(content);
+    toast({ title: "Copied to clipboard!" });
+  }, []);
 
   return (
     <motion.div
@@ -295,7 +341,7 @@ export default function BehavioralQuestionPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Breadcrumbs - Use currentQuestion */}
+      {/* Breadcrumbs */}
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -310,7 +356,7 @@ export default function BehavioralQuestionPage() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Main Question Card - Use currentQuestion */}
+      {/* Main Question Card */}
       <Card className="max-w-3xl mx-auto dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 rounded-xl shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
@@ -338,7 +384,13 @@ export default function BehavioralQuestionPage() {
               {/* Dynamic Recording Button */}
               {!isRecording ? (
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="outline" onClick={handleStartRecording} disabled={!mediaRecorder || isGeneratingFeedback}>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleStartRecording} 
+                    disabled={!mediaRecorder || isGeneratingFeedback}
+                    aria-label="Start recording"
+                    title="Start recording"
+                  >
                     <Mic className="h-4 w-4 mr-2"/>
                     Record Answer
                   </Button>
@@ -347,19 +399,39 @@ export default function BehavioralQuestionPage() {
                 <div className="flex gap-2">
                   {isPaused ? (
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button variant="outline" onClick={handleResumeRecording} className="border-amber-500 text-amber-500 hover:bg-amber-50" disabled={isGeneratingFeedback}>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleResumeRecording} 
+                        className="border-amber-500 text-amber-500 hover:bg-amber-50" 
+                        disabled={isGeneratingFeedback}
+                        aria-label="Resume recording"
+                        title="Resume recording"
+                      >
                         <PlayCircle className="h-4 w-4 mr-2"/> Resume
                       </Button>
                     </motion.div>
                   ) : (
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button variant="outline" onClick={handlePauseRecording} className="border-amber-500 text-amber-500 hover:bg-amber-50" disabled={isGeneratingFeedback}>
+                      <Button 
+                        variant="outline" 
+                        onClick={handlePauseRecording} 
+                        className="border-amber-500 text-amber-500 hover:bg-amber-50" 
+                        disabled={isGeneratingFeedback}
+                        aria-label="Pause recording"
+                        title="Pause recording"
+                      >
                         <PauseCircle className="h-4 w-4 mr-2"/> Pause
                       </Button>
                     </motion.div>
                   )}
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="destructive" onClick={handleStopRecording} disabled={isGeneratingFeedback}>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleStopRecording} 
+                      disabled={isGeneratingFeedback}
+                      aria-label="Stop recording"
+                      title="Stop recording"
+                    >
                       <MicOff className="h-4 w-4 mr-2"/> Stop Recording
                     </Button>
                   </motion.div>
@@ -368,49 +440,69 @@ export default function BehavioralQuestionPage() {
 
               {/* Feedback Button */}
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button onClick={handleGetFeedback} disabled={isGeneratingFeedback || !userAnswer.trim() || !!parsedFeedback} className="min-w-[160px]">
-                    {isGeneratingFeedback ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4 mr-2" />
-                    )}
-                    {isGeneratingFeedback ? "Getting Feedback..." : (parsedFeedback ? "Feedback Received" : "Get Feedback")}
-                  </Button>
+                <Button 
+                  onClick={handleGetFeedback} 
+                  disabled={isGeneratingFeedback || !userAnswer.trim() || !!parsedFeedback} 
+                  className="min-w-[160px]"
+                  aria-busy={isGeneratingFeedback}
+                >
+                  {isGeneratingFeedback ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  {isGeneratingFeedback ? "Getting Feedback..." : (parsedFeedback ? "Feedback Received" : "Get Feedback")}
+                </Button>
               </motion.div>
 
-              {/* Next Question Button - Conditionally Rendered */}
-              {parsedFeedback && !isLastQuestionInCategory && (
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button onClick={handleNextQuestion} variant="outline">
-                          Next Question
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                  </motion.div>
+              {/* Try Again Button - shown when feedback is received */}
+              {parsedFeedback && (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button onClick={handleTryAgain} variant="outline" size="sm">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Try Again
+                  </Button>
+                </motion.div>
               )}
-              {/* Optionally show a different button or message on the last question */} 
+
+              {/* Next Question Button */}
+              {parsedFeedback && !isLastQuestionInCategory && (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button onClick={handleNextQuestion} variant="outline">
+                    Next Question
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </motion.div>
+              )}
+              
               {parsedFeedback && isLastQuestionInCategory && (
-                  <Button disabled variant="outline">All Questions Done!</Button>
+                <Button disabled variant="outline">All Questions Done!</Button>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Accessibility: Live region for async states */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {isGeneratingFeedback ? 'Generating feedback' : (parsedFeedback ? 'Feedback ready' : '')}
+      </div>
+
       {/* AI Feedback Section or Skeleton Loader */}
       {isGeneratingFeedback && (
-          <div className="mt-6 max-w-3xl mx-auto space-y-4">
-              {[...Array(3)].map((_, index) => (
-                  <Card key={index} className="dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 rounded-xl shadow-sm overflow-hidden">
-                      <CardHeader>
-                          <Skeleton className="h-5 w-1/3" />
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-5/6" />
-                      </CardContent>
-                  </Card>
-              ))}
-          </div>
+        <div className="mt-6 max-w-3xl mx-auto space-y-4">
+          {[...Array(3)].map((_, index) => (
+            <Card key={index} className="dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 rounded-xl shadow-sm overflow-hidden">
+              <CardHeader>
+                <Skeleton className="h-5 w-1/3" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {parsedFeedback && !isGeneratingFeedback && (
@@ -425,12 +517,25 @@ export default function BehavioralQuestionPage() {
               >
                 <Card className="dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 rounded-xl shadow-sm overflow-hidden">
                   <CardHeader>
-                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <CardTitle className="text-base font-semibold flex items-center justify-between">
+                      <div className="flex items-center gap-2">
                         {heading === "Strengths" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
                         {heading === "Areas for Improvement" && <AlertTriangle className="h-5 w-5 text-amber-500" />}
                         {heading === "STAR Method Breakdown" && <ListChecks className="h-5 w-5 text-blue-500" />}
                         {heading === "Revised Example Answer" && <Lightbulb className="h-5 w-5 text-purple-500" />}
                         {heading}
+                      </div>
+                      {heading === "Revised Example Answer" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopyAnswer(content)}
+                          aria-label="Copy answer"
+                          title="Copy answer"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="prose prose-sm dark:prose-invert max-w-none pt-0">
@@ -442,7 +547,6 @@ export default function BehavioralQuestionPage() {
           ))}
         </div>
       )}
-
     </motion.div>
   );
-} 
+}

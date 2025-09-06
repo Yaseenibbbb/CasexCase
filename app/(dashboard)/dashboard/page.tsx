@@ -78,7 +78,7 @@ export default function DashboardPage() {
           const { data: cases } = await caseService.getUserCaseSessions(user.id)
           if (cases) {
             setRecentCases(cases)
-            const pausedCase = cases.find((c) => !c.completed)
+            const pausedCase = cases.find((c: any) => !c.completed)
             if (pausedCase) {
               setPausedCase(pausedCase.case_type)
               setShowResumeBanner(true)
@@ -109,49 +109,20 @@ export default function DashboardPage() {
     }
 
     try {
-      const { data, error } = await caseService.createCaseSession({
-        user_id: user.id,
-        case_type: selectedCase,
-        case_title: caseType.title,
-        duration_minutes: 0,
-        completed: false,
-        notes: null,
-        performance_rating: null
+      // Use the new case service that creates a fresh session with generated case data
+      const id = await caseService.createCaseSession(user.id, {
+        caseType: selectedCase as any, // Cast to match the CaseTypeId type
+        company: 'N/A', // Optional company name
+        industry: ['Technology', 'Healthcare', 'Finance', 'Retail', 'Manufacturing', 'Energy', 'Telecommunications'][Math.floor(Math.random() * 7)],
+        role_focus: ['Strategy', 'Operations', 'Product', 'Marketing', 'Finance', 'Sales'][Math.floor(Math.random() * 6)],
+        geography: ['Global', 'North America', 'Europe', 'Asia', 'Middle East', 'Latin America'][Math.floor(Math.random() * 6)],
+        difficulty: ['beginner', 'intermediate', 'advanced'][Math.floor(Math.random() * 3)] as any,
+        time_limit_minutes: [25, 30, 35, 40][Math.floor(Math.random() * 4)],
+        exhibit_preferences: 'auto',
+        constraints_notes: 'Standard business assumptions apply'
       })
 
-      if (error || !data) {
-        toast({ title: "Error", description: "Failed to create session", variant: "destructive" })
-        setIsStartingInterview(false)
-        return
-      }
-
-      // Generate case details using the new CaseByCase prompt system
-      const generateResponse = await fetch('/api/generate-case-details', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          sessionId: data.id, 
-          caseType: selectedCase,
-          useCase: `A ${selectedCase} case study requiring strategic analysis and recommendation`,
-          company: 'N/A',
-          industry: ['Technology', 'Healthcare', 'Finance', 'Retail', 'Manufacturing', 'Energy', 'Telecommunications'][Math.floor(Math.random() * 7)],
-          roleFocus: ['Strategy', 'Operations', 'Product', 'Marketing', 'Finance', 'Sales'][Math.floor(Math.random() * 6)],
-          geography: ['Global', 'North America', 'Europe', 'Asia', 'Middle East', 'Latin America'][Math.floor(Math.random() * 6)],
-          difficulty: ['beginner', 'intermediate', 'advanced'][Math.floor(Math.random() * 3)],
-          timeLimitMinutes: [25, 30, 35, 40][Math.floor(Math.random() * 4)],
-          includeSolutionGuide: false,
-          exhibitPreferences: 'auto',
-          constraintsNotes: 'Standard business assumptions apply'
-        }),
-      })
-
-      if (!generateResponse.ok) {
-        toast({ title: "Error", description: "Failed to prepare case", variant: "destructive" })
-        setIsStartingInterview(false)
-        return
-      }
-
-      router.push(`/interview/${data.id}`)
+      router.push(`/interview/${id}`)
     } catch (error) {
       console.error("Error starting interview:", error)
       toast({ title: "Error", description: "Failed to start interview", variant: "destructive" })

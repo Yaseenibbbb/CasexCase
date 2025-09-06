@@ -99,16 +99,16 @@ STRUCTURE (produce all sections - ALL TEXT MUST BE TTS-FRIENDLY)
 # {company} — {concise_case_title_based_on_use_case}
 
 ## Background
-One short paragraph setting context. Include geography if relevant. Clarify the core problem and why it matters now. Write in natural, conversational tone suitable for speech.
+Write one natural paragraph that sounds like how a human would speak. Start with "Let me give you some background" or "Here's the situation" and explain the context conversationally. Include geography if relevant. Make it sound like you're talking to someone, not writing a document.
 
 ## Objectives
-List three to five concrete goals. For example: size the opportunity, diagnose margin compression, design MVP scope. Write each as a complete sentence, not bullet points.
+Write objectives as natural speech. Start with "Your main goals here are to" or "What we need you to do is" and list the objectives as flowing sentences that sound like spoken conversation. Do not use bullet points or dashes.
 
 ## Constraints and Assumptions
-List the constraints from the input plus sensible interview assumptions. Include data windows, currency, seasonality. Write as flowing text, not bullet points.
+Write constraints as natural conversation. Start with "A few things to keep in mind" or "Here are some important constraints" and explain them as if you're speaking to the candidate. Make it conversational, not formal.
 
 ## Candidate Tasks
-Describe what the candidate must do in terms of analytics, structure, and recommendation. Tie explicitly to the exhibits you will provide. Write as natural speech.
+Describe the task as if you're explaining it to someone in person. Start with "So your job is to" or "What I need from you is" and explain what they need to do in natural, conversational language.
 
 ## Data and Exhibits
 Provide two to five exhibits honoring the preferences. Use E1 through E5 IDs. Make each exhibit referenced later in the prompts and solution.

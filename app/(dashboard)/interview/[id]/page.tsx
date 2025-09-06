@@ -1168,7 +1168,7 @@ export default function InterviewPage() {
                     'Case'
                   )}
                 </h3>
-                <p className="text-sm text-foreground-600 mb-1.5 line-clamp-2">
+                <p className="text-sm text-foreground-600 mb-1.5 line-clamp-3">
                   {(
                     caseSession?.generated_case_data?.sections?.background ||
                     caseSession?.generated_case_data?.caseFacts?.CompanyBackground ||
@@ -1176,7 +1176,7 @@ export default function InterviewPage() {
                     caseSession?.generated_case_data?.caseFacts?.ClientBackground ||
                     caseSession?.generated_case_data?.caseFacts?.TargetBackground ||
                     caseSession?.case_details?.description ||
-                    ''
+                    'Case study details will appear here once the case is generated.'
                   )}
                 </p>
                 <p className="text-xs text-foreground-500 mb-1 line-clamp-1">

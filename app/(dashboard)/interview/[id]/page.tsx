@@ -313,6 +313,33 @@ export default function InterviewPage() {
           const firstParagraph = generatedData.sections.interviewerScript.split('\n')[0];
           initialPresentationText = firstParagraph || generatedData.sections.interviewerScript;
         }
+        
+        // Add full case details to the presentation
+        const caseTitle = generatedData.caseMeta?.title || 'Case Study';
+        const background = generatedData.sections?.background || '';
+        const objectives = generatedData.sections?.objectives || '';
+        const tasks = generatedData.sections?.tasks || '';
+        
+        // Create comprehensive case presentation
+        let fullCasePresentation = initialPresentationText;
+        
+        if (caseTitle) {
+          fullCasePresentation += `\n\n**${caseTitle}**`;
+        }
+        
+        if (background) {
+          fullCasePresentation += `\n\n**Background:**\n${background}`;
+        }
+        
+        if (objectives) {
+          fullCasePresentation += `\n\n**Objectives:**\n${objectives}`;
+        }
+        
+        if (tasks) {
+          fullCasePresentation += `\n\n**Your Task:**\n${tasks}`;
+        }
+        
+        initialPresentationText = fullCasePresentation;
         initialExhibits = generatedData?.exhibits || [];
       } else if (generatedData?.caseFacts?.initialPresentationText) {
         // Fallback to old structure
@@ -323,7 +350,24 @@ export default function InterviewPage() {
         const caseTitle = generatedData.caseMeta.title || 'this case study';
         const industry = generatedData.caseMeta.industry || 'business';
         const company = generatedData.caseMeta.company || 'the client';
-        initialPresentationText = `Hello, I'm Polly, your case interviewer. We'll be discussing ${caseTitle} involving ${company} in the ${industry} industry. Your task is to work through this problem and provide a recommendation. Let's start by hearing your approach.`;
+        const background = generatedData.sections?.background || '';
+        const tasks = generatedData.sections?.tasks || '';
+        
+        let fullCasePresentation = `Hello, I'm Polly, your case interviewer. We'll be discussing ${caseTitle} involving ${company} in the ${industry} industry.`;
+        
+        if (background) {
+          fullCasePresentation += `\n\n**Background:**\n${background}`;
+        }
+        
+        if (tasks) {
+          fullCasePresentation += `\n\n**Your Task:**\n${tasks}`;
+        } else {
+          fullCasePresentation += `\n\nYour task is to work through this problem and provide a recommendation.`;
+        }
+        
+        fullCasePresentation += `\n\nLet's start by hearing your approach.`;
+        
+        initialPresentationText = fullCasePresentation;
         initialExhibits = generatedData?.exhibits || [];
       }
 
@@ -1132,16 +1176,12 @@ export default function InterviewPage() {
                     ''
                   )}
                 </p>
-                <div className="text-xs text-foreground-500 line-clamp-2 bg-content2/30 p-2 rounded-sm">
-                  <span className="font-medium text-primary-500">Task:</span>{" "}
+                <div className="text-xs text-foreground-500 bg-content2/30 p-2 rounded-sm">
+                  <span className="font-medium text-primary-500">Case Type:</span>{" "}
                   {(
-                    caseSession?.generated_case_data?.sections?.tasks ||
-                    caseSession?.generated_case_data?.caseFacts?.CoreTask ||
-                    caseSession?.generated_case_data?.caseFacts?.ProblemStatement ||
-                    caseSession?.generated_case_data?.caseFacts?.Task ||
-                    caseSession?.case_details?.objective ||
-                    ''
-                  ) || <span className="italic text-foreground-300">No case details available.</span>}
+                    caseSession?.case_type?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) ||
+                    'Diagnostic'
+                  )}
                 </div>
               </CardBody>
             </Card>

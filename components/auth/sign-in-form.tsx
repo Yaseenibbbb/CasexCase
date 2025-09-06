@@ -35,6 +35,8 @@ export function SignInForm() {
   const { signIn, signInWithGoogle, signInWithLinkedIn } = useAuth()
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [demoPasscode, setDemoPasscode] = useState("")
+  const [isDemoLoading, setIsDemoLoading] = useState(false)
 
   // Initialize the form with react-hook-form and Zod resolver
   const form = useForm<z.infer<typeof formSchema>>({
@@ -78,6 +80,23 @@ export function SignInForm() {
     // Redirect/toast logic might be handled within signInWithLinkedIn or via onAuthStateChange
   };
 
+  const handleDemoLogin = async () => {
+    setIsDemoLoading(true)
+    try {
+      const res = await fetch('/api/demo-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passcode: demoPasscode }) })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Demo login failed')
+      const { error } = await signIn(data.email, demoPasscode)
+      if (error) throw error
+      toast({ title: 'Demo mode', description: 'Signed in as demo user' })
+      router.push('/dashboard')
+    } catch (e:any) {
+      toast({ title: 'Demo login failed', description: e?.message || 'Invalid passcode', variant: 'destructive' })
+    } finally {
+      setIsDemoLoading(false)
+    }
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -113,6 +132,18 @@ export function SignInForm() {
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? "Signing In..." : "Sign In"}
         </Button>
+
+        {/* Demo Mode */}
+        <div className="mt-4 rounded-md border p-3 space-y-3">
+          <div className="text-sm font-medium">Demo mode</div>
+          <div className="text-xs text-muted-foreground">Enter passcode to try the app without creating an account.</div>
+          <div className="flex gap-2">
+            <Input placeholder="Passcode" value={demoPasscode} onChange={(e)=>setDemoPasscode(e.target.value)} />
+            <Button type="button" onClick={handleDemoLogin} disabled={isDemoLoading}>
+              {isDemoLoading ? 'Entering…' : 'Enter'}
+            </Button>
+          </div>
+        </div>
 
         {/* Divider */}
         <div className="relative my-6">

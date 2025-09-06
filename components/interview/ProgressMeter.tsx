@@ -36,7 +36,7 @@ export function ProgressMeter({ currentStep }: ProgressMeterProps) {
 
   // Content for the Tooltip
   const tooltipContent = (
-    <Card shadow="md" className="max-w-xs">
+    <Card shadow="md" className="max-w-xs bg-content1/95 border border-content2">
       <CardHeader className="pb-2">
          <h4 className="text-sm font-medium flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary"></span>
@@ -54,10 +54,10 @@ export function ProgressMeter({ currentStep }: ProgressMeterProps) {
                   <div
                   className={`w-4 h-4 rounded-full flex items-center justify-center border-2 ${ 
                         isActive
-                        ? "border-primary bg-primary/20"
+                        ? "border-primary bg-primary/30"
                         : isCompleted
-                           ? "border-success bg-success/20"
-                           : "border-default bg-content3"
+                           ? "border-success bg-success/30"
+                           : "border-default bg-content2/90"
                   }`}
                   >
                   {isCompleted && <Check size={10} className="text-success" strokeWidth={3}/>}
@@ -70,7 +70,7 @@ export function ProgressMeter({ currentStep }: ProgressMeterProps) {
                         ? "font-medium text-primary"
                         : isCompleted
                            ? "text-success font-medium line-through"
-                           : "text-foreground-500"
+                           : "text-foreground"
                      }`}
                   >
                      {step.name}
@@ -90,7 +90,7 @@ export function ProgressMeter({ currentStep }: ProgressMeterProps) {
          radius="lg"
          className="p-0 bg-transparent" // Make tooltip background transparent
       >
-         {/* NextUI Progress Component */}
+         {/* NextUI Progress Component with improved visibility */}
          <Progress
             aria-label="Interview progress"
             value={progressValue}
@@ -99,7 +99,12 @@ export function ProgressMeter({ currentStep }: ProgressMeterProps) {
             size="md"
             showValueLabel={true}
             valueLabel={`${Math.round(progressValue)}%`}
-            className="w-full cursor-pointer" // Make it full width and indicate clickability
+            className="w-full cursor-pointer font-medium shadow-sm" // Added font-medium and shadow
+            classNames={{
+              track: "bg-content2/80", // Changed from default to be more opaque
+              value: "bg-gradient-to-r from-primary to-primary-500", // More prominent gradient
+              label: "font-medium text-foreground-600" // Make label more visible
+            }}
          />
       </Tooltip>
   )

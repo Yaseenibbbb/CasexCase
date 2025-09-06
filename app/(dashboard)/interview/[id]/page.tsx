@@ -159,7 +159,7 @@ export default function InterviewPage() {
     }
   }, [currentPlayingIndex, ttsSentenceQueue]); // Dependencies
 
-  // --- Modified startSentenceTTS (Reverted UI Change) --- 
+  // --- Modified startSentenceTTS to use a single chat bubble --- 
   const startSentenceTTS = (prose: string) => { 
     const sentences = splitIntoSentences(prose);
     if (sentences.length > 0) {
@@ -174,59 +174,48 @@ export default function InterviewPage() {
           audioPlayerRef.current = null;
       }
       
-      // *** REMOVED: Logic that added the full message bubble here ***
+      // *** MODIFIED: Add a single message bubble for the entire prose ***
+      const newMessageId = Date.now() + Math.random();
+      const fullMessage = {
+        id: newMessageId,
+        role: "assistant" as const,
+        content: prose,
+        timestamp: new Date().toISOString(),
+        hasExhibit: false, 
+        exhibitId: null,
+        isEnd: false,
+      };
+      
+      setMessages(prev => {
+        // Check if the last message has the same content to avoid duplicates
+        if (prev.length > 0 && prev[prev.length - 1].content === prose) {
+          return prev;
+        }
+        return [...prev, fullMessage];
+      });
 
       // Set up the audio queue and start playing state
       setTtsSentenceQueue(sentences); 
       setCurrentPlayingIndex(0); // Reset index to start
       setIsTTSPlaying(true); 
       setInteractionState('AI_SPEAKING'); 
-      // The useEffect below will now handle adding the first bubble (index 0)
     } else {
-       console.log("[startTTS] No sentences found to play.");
-       setInteractionState('USER_TURN'); 
+      console.log("[startTTS] No sentences found to play.");
+      setInteractionState('USER_TURN'); 
     }
   };
 
-  // --- Refactored Playback Trigger Effect (Re-added UI Bubble Logic) --- 
+  // --- Modified Playback Trigger Effect to handle single bubble --- 
   useEffect(() => {
       console.log(`[Playback Effect] Check - isTTSPlaying: ${isTTSPlaying}, index: ${currentPlayingIndex}, queueLength: ${ttsSentenceQueue.length}`);
       if (isTTSPlaying && currentPlayingIndex < ttsSentenceQueue.length) {
-          const sentenceToAdd = ttsSentenceQueue[currentPlayingIndex];
-          if (sentenceToAdd) {
-             // *** RE-ADDED: Add the bubble for the *current* sentence before playing ***
-             console.log(`[Playback Effect] Adding UI bubble for index: ${currentPlayingIndex}`);
-             const newMessageId = Date.now() + Math.random(); 
-             const currentSentenceMessage = {
-                id: newMessageId,
-                role: "assistant" as const,
-                content: sentenceToAdd,
-                timestamp: new Date().toISOString(),
-                hasExhibit: false, 
-                exhibitId: null,
-                isEnd: false, // Assuming not end unless explicitly marked later
-             };
-             // Add message, preventing duplicates same as before
-             setMessages(prev => {
-                 if (prev.length > 0 && prev[prev.length - 1].content === sentenceToAdd) {
-                     return prev;
-                 }
-                 return [...prev, currentSentenceMessage];
-             });
-
-             // *** Keep the call to play audio ***
-             console.log(`[Playback Effect] Calling playAudioForCurrentIndex for index ${currentPlayingIndex}.`);
-             playAudioForCurrentIndex();
-             // Removed the small delay as UI update should be quick
-          } else {
-             console.warn(`[Playback Effect] No sentence found at index ${currentPlayingIndex}. Skipping.`);
-             setCurrentPlayingIndex(prev => prev + 1); 
-          }
+          // *** MODIFIED: No longer adding UI bubbles per sentence, just play the audio ***
+          console.log(`[Playback Effect] Playing audio for index ${currentPlayingIndex}.`);
+          playAudioForCurrentIndex();
       }
-  // Dependencies are correct
   }, [isTTSPlaying, currentPlayingIndex, ttsSentenceQueue, playAudioForCurrentIndex]); 
 
-  // --- Cleanup Effect (Remains the same) --- 
+  // --- Cleanup Effect (Re-added) --- 
   useEffect(() => {
     // Check if playing, index reached end, AND the queue had items initially
     if (isTTSPlaying && currentPlayingIndex >= ttsSentenceQueue.length && ttsSentenceQueue.length > 0) {

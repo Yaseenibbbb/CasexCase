@@ -70,7 +70,7 @@ export const CASE_TYPES: CaseType[] = [
   {
     id: "go-no-go",
     title: "Go/No-Go Case",
-    description: "Help a client decide whether to launch a new product or enter a new market.",
+    description: "Help a client decide whether to launch a new product, enter a new market, or acquire a company.",
     icon: BarChart3,
     difficulty: "Intermediate",
     duration: 30,
@@ -96,7 +96,7 @@ export const CASE_TYPES: CaseType[] = [
   {
     id: "brainstorming",
     title: "Brainstorming Case",
-    description: "Generate creative ideas for a client, such as ways to increase revenue.",
+    description: "Generate creative ideas for a client, such as how to increase revenue or solve a unique problem.",
     icon: Rocket,
     difficulty: "Intermediate",
     duration: 30,

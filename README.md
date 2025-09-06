@@ -200,6 +200,57 @@ casebycase/
 - **Fixes**: Addressed issues with Supabase calls (`caseService.createCaseSession`) potentially hanging due to RLS policies by adding more robust checks and logging. Resolved client-side environment variable errors for API keys. Resolved TTS playback issues and state management.
 - Focus next on activating Behavioral Questions, implementing audio transcription, and further enhancing AI responses.
 
+## V0.2 Changes and Issues
+
+The following issues have been identified in v0.2 and are being tracked for fixes:
+
+| Feature | Issue | Status |
+|---------|-------|--------|
+| Custom Prep Menu | When opening and playing with the menu, no button on the top left in the sidebar to go back to dashboard | ✅ FIXED |
+| Strategic Go/No-Go Description | "Help a client decide whether to launch a new product, enter a new market, or acquire a company" - Text needs review | ✅ FIXED |  
+| Brainstorming Case Description | "Generate creative ideas for a client, such as how to increase revenue or solve a unique problem" - Text needs review | ✅ FIXED |
+| Case Interview Voice Recording | Does not work even after tinkering with it | ❌ BROKEN |
+| Case Interview Text-to-Speech | Does not work when the first prompt is given. Only after typing something like "Hi" does Polly start working. Update: eventually worked after 4th or 5th case. It did say "Uh" once between the chat bubbles | ⚠️ INCONSISTENT |
+| Case Interview Chat Bubble(s) | Should be a single chat bubble. It seems to split up every time, causing breaks in speech | ✅ FIXED |
+| Case Interview Case Description in Right Toolbar | Consider removing entirely. The candidate should be able to grasp this info from the prompt or ask the AI if needed | 💡 SUGGESTION |
+| Case Interview Progress Bullet points | Progress meter looks good but shouldn't be transparent and it ends after Recommendation (no Conclusion) | ✅ FIXED |
+| Case Interview Topics | TechInnovate cloud-based management software tools case appears consistently for strategic go/no-go | ⚠️ REPETITIVE |
+| Case Interview Exhibits | Exhibits did not display even when relevant during the case | ❌ BROKEN |
+| Case Interview Go/No-Go AI notes | AI analysis is very qualitative. The AI should proactively include revenue/cost calculations and initial investment cost calculations rather than requiring user prompting | 💡 ENHANCEMENT |
+
+### V0.2 Update Summary
+
+The v0.2 update addresses several key usability issues identified in the initial version of the application:
+
+1. **Navigation Improvements**: 
+   - Added back button to Custom Prep Menu for better navigation flow
+   
+2. **UI/UX Enhancements**:
+   - Fixed chat bubbles to prevent splitting messages, providing a smoother conversation experience
+   - Improved Progress Meter styling with higher opacity and better visibility
+   - Ensured Conclusion step is clearly visible in the interview progress
+
+3. **Content Updates**:
+   - Refined case descriptions for Strategic Go/No-Go and Brainstorming cases to be more comprehensive
+   
+4. **Remaining Challenges**:
+   - Voice Recording functionality still needs repair
+   - Text-to-Speech behavior requires stabilization
+   - Exhibit display issues need to be addressed
+   - AI analysis should be enhanced to include quantitative elements automatically
+
+The update has successfully addressed 4 out of 11 identified issues, with focus on improving the core user experience flow and clarity of case descriptions.
+
+### Fixes Implemented
+- **[DONE]** Custom Prep Menu navigation: Added back button to navigate to dashboard
+- **[NOT STARTED]** Fix Voice Recording functionality
+- **[NOT STARTED]** Fix Text-to-Speech inconsistencies
+- **[DONE]** Merge chat bubbles to provide smoother conversation flow
+- **[DONE]** Improve Progress Meter styling and add Conclusion step
+- **[NOT STARTED]** Fix exhibit display issues
+- **[DONE]** Update Strategic Go/No-Go and Brainstorming case descriptions
+- **[NOT STARTED]** Improve AI analysis to include quantitative elements
+
 ## Database Schema
 
 - `public.case_sessions`: Stores case interview session data.

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import OpenAI from 'openai';
 import { buildCasePackGeneratorSystem } from '@/prompts/caseGenerator';
 
@@ -11,11 +11,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Create Supabase client with service role key for server-side operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Use the admin client for server-side operations
 
 export async function POST(request: NextRequest) {
   let sessionId: string | undefined;
@@ -103,7 +99,7 @@ Create a realistic, engaging case study with 2-5 exhibits and all required secti
     if (sessionId) {
       try {
         console.log(`[API generate-case-details] Updating case session in Supabase...`);
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from('case_sessions')
           .update({ 
             generated_case_data: parsedData,

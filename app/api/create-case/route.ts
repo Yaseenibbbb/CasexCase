@@ -50,26 +50,8 @@ export async function POST(req: Request) {
 
     const actualUserId = userId === "demo-user" ? "demo-user" : userId;
 
-    // Ensure demo user exists in user_profiles table
-    if (actualUserId === "demo-user") {
-      const { error: profileError } = await supabaseAdmin
-        .from("user_profiles")
-        .upsert({
-          id: "demo-user",
-          full_name: "Demo User",
-          avatar_url: null,
-          streak_count: 5,
-          weekly_goal_hours: 10,
-          streak_last_active: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      
-      if (profileError) {
-        console.error("[create-case] Error creating demo user profile:", profileError);
-        return NextResponse.json({ error: "Failed to create demo user profile" }, { status: 500 });
-      }
-    }
+    // Skip demo user profile creation - Supabase connection is not available
+    console.log("[create-case] Running in offline mode - Supabase not available");
 
     // 1) Generate the case pack - no internal fetch
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -97,27 +79,19 @@ export async function POST(req: Request) {
 
     const pack: any = { raw: text, caseMeta: { title: caseTitle } };
 
-    // 3) Insert a NEW session
-    const { data, error } = await supabaseAdmin
-      .from("case_sessions")
-      .insert({
-        user_id: actualUserId,
-        case_type: meta.caseType,
-        case_title: caseTitle,
-        duration_minutes: 0,
-        completed: false,
-        generated_case_data: pack,
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      console.error("[create-case] Supabase insert error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
+    // 3) Return the generated case data (offline mode)
+    const sessionId = `offline-session-${Date.now()}`;
+    
     return NextResponse.json(
-      { data: { sessionId: data.id } },
+      { 
+        data: { 
+          sessionId,
+          caseData: pack,
+          caseTitle,
+          caseType: meta.caseType,
+          userId: actualUserId
+        } 
+      },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (err) {

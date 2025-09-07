@@ -14,10 +14,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    // Handle demo user with a proper UUID
+    const actualUserId = userId === 'demo-user' ? '00000000-0000-0000-0000-000000000000' : userId;
+
     const { data, error } = await supabaseAdmin
       .from("case_sessions")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", actualUserId)
       .order("created_at", { ascending: false })
       .limit(10);
 

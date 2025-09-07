@@ -29,6 +29,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing userId or caseType" }, { status: 400 });
     }
 
+    // Handle demo user with a proper UUID
+    const actualUserId = userId === 'demo-user' ? '00000000-0000-0000-0000-000000000000' : userId;
+
     // 1) Generate pack by calling your generator route (which no longer updates DB)
     const entropy = `${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2))}`;
     const baseUrl = getBaseUrl();
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
     const { data, error } = await supabaseAdmin
       .from("case_sessions")
       .insert({
-        user_id: userId,
+        user_id: actualUserId,
         case_type: meta.caseType,
         case_title: caseTitle,
         case_details: {

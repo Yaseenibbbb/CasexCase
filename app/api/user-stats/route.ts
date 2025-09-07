@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
@@ -10,8 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const supabase = createServerClient();
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("case_sessions")
       .select("completed, duration_minutes, performance_rating")
       .eq("user_id", userId);

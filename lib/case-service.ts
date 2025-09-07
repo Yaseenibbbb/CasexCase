@@ -76,21 +76,33 @@ export const caseService = {
 
 Create a realistic, engaging case study with 2-5 exhibits and all required sections.`;
 
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-      temperature: 0.85,
-      top_p: 1,
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: userPromptString
-        }
-      ],
-    });
+    console.log('[CaseService] Making OpenAI API call...');
+    let completion;
+    try {
+      completion = await openai.chat.completions.create({
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        temperature: 0.85,
+        top_p: 1,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: userPromptString
+          }
+        ],
+      });
+      console.log('[CaseService] OpenAI API call successful');
+    } catch (openaiError) {
+      console.error('[CaseService] OpenAI API call failed:', {
+        message: (openaiError as Error).message,
+        name: (openaiError as Error).name,
+        stack: (openaiError as Error).stack
+      });
+      throw new Error(`OpenAI API call failed: ${(openaiError as Error).message}`);
+    }
 
     const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) {
@@ -103,31 +115,9 @@ Create a realistic, engaging case study with 2-5 exhibits and all required secti
       (pack?.caseMeta as any)?.title ??
       `${meta.caseType.replace("-", " ")} case`;
 
-    const supabase = createServerClient();
-    const { data, error } = await supabase
-      .from("case_sessions")
-      .insert({
-        user_id: userId,
-        case_type: meta.caseType,
-        case_title,
-        case_details: {
-          // light summary for UI fallbacks
-          type: meta.caseType,
-          title: case_title,
-          description:
-            pack?.sections?.background ??
-            "Generated case",
-        },
-        generated_case_data: pack, // keep the full structured pack for the interviewer
-        status: "active",
-      })
-      .select("id")
-      .single();
-
-    if (error) throw error;
-    
-    console.info("[createCaseSession] new id:", data.id, "title:", case_title);
-    return data.id as string;
+    // Note: This method is now deprecated in favor of the direct API route approach
+    // The create-case API route now handles case generation and database insertion directly
+    throw new Error('This method is deprecated. Use the /api/create-case endpoint instead.');
   },
 
   /** Fetch one session by id */

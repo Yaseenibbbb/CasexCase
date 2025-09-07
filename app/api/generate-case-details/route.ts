@@ -99,21 +99,23 @@ Create a realistic, engaging case study with 2-5 exhibits and all required secti
     const parsedData = parseCaseResponse(responseText);
     console.log(`[API generate-case-details] Successfully parsed case response.`);
 
-    // Update the case session with generated data (only for non-demo sessions)
-    if (!isDemo) {
-      console.log(`[API generate-case-details] Updating case session in Supabase...`);
-      const { error: updateError } = await supabase
-        .from('case_sessions')
-        .update({ 
-          generated_case_data: parsedData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', sessionId);
+    // Update the case session with generated data (only if sessionId is provided)
+    if (sessionId) {
+      try {
+        console.log(`[API generate-case-details] Updating case session in Supabase...`);
+        const { error: updateError } = await supabase
+          .from('case_sessions')
+          .update({ 
+            generated_case_data: parsedData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', sessionId);
 
-      if (updateError) {
-        console.error(`[API generate-case-details] Supabase update failed:`, updateError);
-        // Return the generated data anyway, even if we can't save it
-        console.log(`[API generate-case-details] Supabase update failed, using generated data:`, updateError);
+        if (updateError) throw updateError;
+        console.log(`[API generate-case-details] Successfully updated case session ${sessionId}`);
+      } catch (e) {
+        console.error(`[API generate-case-details] Supabase update failed:`, e);
+        // but still return the generated pack — don't 500 here
       }
     }
 

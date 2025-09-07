@@ -72,28 +72,33 @@ export default function DashboardPage() {
     if (!isLoading && user) {
       const fetchUserData = async () => {
         try {
-          // Fetch user stats via API route
-          const statsResponse = await fetch(`/api/user-stats?userId=${user.id}`)
-          if (statsResponse.ok) {
-            const { data: stats } = await statsResponse.json()
-            if (stats) setUserStats(stats)
+          // Use Promise.allSettled to not block on individual failures
+          const [statsResult, casesResult] = await Promise.allSettled([
+            fetch(`/api/user-stats?userId=${user.id}`, { cache: "no-store" }).then(r => r.json()),
+            fetch(`/api/user-cases?userId=${user.id}`, { cache: "no-store" }).then(r => r.json())
+          ]);
+
+          // Handle stats result
+          if (statsResult.status === "fulfilled" && statsResult.value?.data) {
+            setUserStats(statsResult.value.data);
+          } else {
+            console.warn("Stats fetch failed:", statsResult.status === "rejected" ? statsResult.reason : "No data");
           }
 
-          // Fetch user cases via API route
-          const casesResponse = await fetch(`/api/user-cases?userId=${user.id}`)
-          if (casesResponse.ok) {
-            const { data: cases } = await casesResponse.json()
-            if (cases) {
-              setRecentCases(cases)
-              const pausedCase = cases.find((c: any) => !c.completed)
-              if (pausedCase) {
-                setPausedCase(pausedCase.case_type)
-                setShowResumeBanner(true)
-              }
+          // Handle cases result
+          if (casesResult.status === "fulfilled" && casesResult.value?.data) {
+            const cases = casesResult.value.data;
+            setRecentCases(cases);
+            const pausedCase = cases.find((c: any) => !c.completed);
+            if (pausedCase) {
+              setPausedCase(pausedCase.case_type);
+              setShowResumeBanner(true);
             }
+          } else {
+            console.warn("Cases fetch failed:", casesResult.status === "rejected" ? casesResult.reason : "No data");
           }
         } catch (error) {
-          console.error("Error fetching user data:", error)
+          console.error("Error in fetchUserData:", error)
         }
       }
       fetchUserData()
@@ -145,7 +150,7 @@ export default function DashboardPage() {
       }
 
       const { data } = await response.json()
-      const id = data.id
+      const id = data.sessionId
 
       router.push(`/interview/${id}`)
     } catch (error) {

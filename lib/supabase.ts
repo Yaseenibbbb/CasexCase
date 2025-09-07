@@ -52,5 +52,10 @@ export const createServerClient = () => {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is required')
   }
   
-  return createClient<Database>(supabaseUrl, supabaseServiceKey)
+  return createClient<Database>(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
 }

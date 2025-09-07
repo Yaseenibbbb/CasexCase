@@ -52,7 +52,13 @@ export async function POST(req: Request) {
         user_id: userId,
         case_type: meta.caseType,
         case_title: caseTitle,
+        case_details: {
+          type: meta.caseType,
+          title: caseTitle,
+          description: pack?.sections?.background || pack?.sections?.overview || "Generated case",
+        },
         generated_case_data: pack,
+        status: "active",
       })
       .select("id")
       .single();

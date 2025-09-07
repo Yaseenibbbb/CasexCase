@@ -266,11 +266,12 @@ export default function InterviewPage() {
         
         // Store structured case context for AI evaluation
         if (sessionData.generated_case_data) {
+          const caseData = sessionData.generated_case_data as any;
           setCaseContext({
-            caseMeta: sessionData.generated_case_data.caseMeta,
-            sections: sessionData.generated_case_data.sections,
-            exhibits: sessionData.generated_case_data.exhibits,
-            solutionGuide: sessionData.generated_case_data.solutionGuide,
+            caseMeta: caseData.caseMeta,
+            sections: caseData.sections,
+            exhibits: caseData.exhibits,
+            solutionGuide: caseData.solutionGuide,
             caseType: sessionData.case_type,
             caseTitle: sessionData.case_title
           });
@@ -1067,8 +1068,8 @@ export default function InterviewPage() {
 
   // --- Add back memoized calculation needed by header ---
   const caseTypeData = useMemo(() => 
-    caseSession?.case_details?.type ? CASE_TYPES.find(ct => ct.id === caseSession.case_details.type) : null,
-   [caseSession?.case_details?.type]);
+    caseSession?.case_type ? CASE_TYPES.find(ct => ct.id === caseSession.case_type) : null,
+   [caseSession?.case_type]);
    
   const caseDuration = useMemo(() => 
     caseTypeData?.duration || 45, // Default to 45 if not found
@@ -1132,7 +1133,7 @@ export default function InterviewPage() {
         onExit={handleExitInterview}
         onTtsToggle={(enabled) => setIsTtsEnabled(enabled)} 
         currentStep={currentStep}
-        caseTitle={caseSession?.case_details?.title ?? "Case Interview"}
+        caseTitle={caseSession?.case_title ?? "Case Interview"}
         totalDuration={caseDuration}
         onSave={handleSaveProgress}
         onComplete={handleCompleteInterview}
@@ -1285,7 +1286,7 @@ export default function InterviewPage() {
                 <h3 className="text-base font-semibold mb-1.5 text-foreground line-clamp-1 border-l-2 border-primary pl-2">
                   {(
                     caseSession?.generated_case_data?.caseMeta?.title ||
-                    caseSession?.case_details?.title ||
+                    caseSession?.case_title ||
                     caseSession?.generated_case_data?.caseFacts?.ClientName ||
                     caseSession?.generated_case_data?.caseFacts?.BuyerName ||
                     caseSession?.generated_case_data?.caseFacts?.TargetName ||
@@ -1300,7 +1301,7 @@ export default function InterviewPage() {
                     caseSession?.generated_case_data?.caseFacts?.BuyerBackground ||
                     caseSession?.generated_case_data?.caseFacts?.ClientBackground ||
                     caseSession?.generated_case_data?.caseFacts?.TargetBackground ||
-                    caseSession?.case_details?.description ||
+                    "Generated case" ||
                     'Case study details will appear here once the case is generated.'
                   )}
                 </p>
@@ -1310,14 +1311,14 @@ export default function InterviewPage() {
                     caseSession?.generated_case_data?.caseFacts?.StrategicContext ||
                     caseSession?.generated_case_data?.caseFacts?.MarketContext ||
                     caseSession?.generated_case_data?.caseFacts?.Industry ||
-                    caseSession?.case_details?.type ||
+                    caseSession?.case_type ||
                     ''
                   )}
                 </p>
                 <div className="text-xs text-foreground-500 bg-content2/30 p-2 rounded-sm">
                   <span className="font-medium text-primary-500">Case Type:</span>{" "}
                   {(
-                    caseSession?.case_type?.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) ||
+                    caseSession?.case_type?.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) ||
                     'Diagnostic'
                   )}
                 </div>

@@ -84,13 +84,9 @@ export async function POST(req: Request) {
         user_id: actualUserId,
         case_type: meta.caseType,
         case_title: caseTitle,
-        case_details: {
-          type: meta.caseType,
-          title: caseTitle,
-          description: "Generated case",
-        },
+        duration_minutes: 0,
+        completed: false,
         generated_case_data: pack,
-        status: "active",
       })
       .select("id")
       .single();

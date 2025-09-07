@@ -1,62 +1,83 @@
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getBaseUrl } from "@/lib/base-url";
-
+// app/api/create-case/route.ts
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type CaseTypeId = "diagnostic" | "profitability" | "market-entry" | "product" | "operations" | "sizing";
+import { NextResponse } from "next/server";
+import OpenAI from "openai";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+type CaseTypeId =
+  | "diagnostic"
+  | "profitability"
+  | "market-entry"
+  | "product"
+  | "operations"
+  | "sizing";
+
+const SYSTEM_PROMPT = `You are CaseByCase’s Case Pack Generator. Produce a complete, interview-ready case pack.
+Include Background, Objectives, Constraints, Candidate Tasks.
+Add 2–5 exhibits using [[EXHIBIT:...]]...[[/EXHIBIT]].
+Provide an Interviewer Script (opening, 6–10 probes, hints, 2–3 calc checks, wrap-up).
+Emit [[CASE_META]] JSON (title, industry, company, geography, difficulty, time_limit, role_focus, exhibits).
+If you include a solution, wrap in [[SOLUTION_GUIDE_START]]...[[SOLUTION_GUIDE_END]].`;
+
+function buildUserPrompt(meta: Record<string, any>) {
+  const seed = `${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2))}`;
+  return `use_case: ${meta.use_case ?? meta.caseType}
+company: ${meta.company ?? "Unknown"}
+industry: ${meta.industry ?? "Unknown"}
+role_focus: ${meta.role_focus ?? "General"}
+geography: ${meta.geography ?? "Global"}
+difficulty: ${meta.difficulty ?? "intermediate"}
+time_limit_minutes: ${meta.time_limit_minutes ?? 30}
+entropy_seed: ${seed}`;
+}
+
+const DEMO_USER = "00000000-0000-0000-0000-000000000000";
 
 export async function POST(req: Request) {
   try {
-    const { userId, meta } = await req.json() as {
+    const { userId, meta } = (await req.json()) as {
       userId: string;
-      meta: {
-        caseType: CaseTypeId;
-        company?: string;
-        industry?: string;
-        role_focus?: string;
-        geography?: string;
-        difficulty?: "beginner" | "intermediate" | "advanced";
-        time_limit_minutes?: number;
-        exhibit_preferences?: string;
-        constraints_notes?: string;
-      };
+      meta: { caseType: CaseTypeId; [k: string]: any };
     };
 
-    if (!userId || !meta?.caseType) {
+    if (!userId || !meta?.caseType)
       return NextResponse.json({ error: "Missing userId or caseType" }, { status: 400 });
+
+    if (!process.env.OPENAI_API_KEY)
+      return NextResponse.json({ error: "OPENAI_API_KEY not set" }, { status: 500 });
+
+    const actualUserId = userId === "demo-user" ? DEMO_USER : userId;
+
+    // 1) Generate the case pack - no internal fetch
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+      temperature: 0.85,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: buildUserPrompt(meta) },
+      ],
+    });
+
+    const text = completion.choices[0]?.message?.content?.trim();
+    if (!text) return NextResponse.json({ error: "OpenAI returned empty content" }, { status: 500 });
+
+    // 2) Try to pick a title
+    let caseTitle = `${meta.caseType} case`;
+    const metaMatch = text.match(/\[\[CASE_META\]\]\s*([\s\S]*?)\s*\[\[\/CASE_META\]\]/i);
+    if (metaMatch) {
+      try { caseTitle = JSON.parse(metaMatch[1])?.title || caseTitle; } catch {}
+    } else {
+      const h1 = text.match(/^#\s*(.+)$/m);
+      if (h1) caseTitle = h1[1].trim();
     }
 
-    // Handle demo user with a proper UUID
-    const actualUserId = userId === 'demo-user' ? '00000000-0000-0000-0000-000000000000' : userId;
+    const pack: any = { raw: text, caseMeta: { title: caseTitle } };
 
-    // 1) Generate pack by calling your generator route (which no longer updates DB)
-    const entropy = `${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2))}`;
-    const baseUrl = getBaseUrl();
-    console.log(`[create-case] Calling generate-case-details with baseUrl: ${baseUrl}`);
-    const genRes = await fetch(`${baseUrl}/api/generate-case-details`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      body: JSON.stringify({ ...meta, entropy_seed: entropy }),
-    });
-    
-    console.log(`[create-case] Generate response status: ${genRes.status}`);
-    const genJson = await genRes.json().catch((e) => {
-      console.error(`[create-case] Failed to parse generate response:`, e);
-      return {};
-    });
-    
-    if (!genRes.ok || !genJson?.data) {
-      console.error(`[create-case] Generation failed:`, { status: genRes.status, response: genJson });
-      return NextResponse.json({ error: genJson?.error || "Generation failed" }, { status: 500 });
-    }
-    const pack = genJson.data;
-    const caseTitle = pack?.caseMeta?.title || pack?.title || `${meta.caseType} case`;
-
-    // 2) Insert session via admin client
+    // 3) Insert a NEW session
     const { data, error } = await supabaseAdmin
       .from("case_sessions")
       .insert({
@@ -66,7 +87,7 @@ export async function POST(req: Request) {
         case_details: {
           type: meta.caseType,
           title: caseTitle,
-          description: pack?.sections?.background || pack?.sections?.overview || "Generated case",
+          description: "Generated case",
         },
         generated_case_data: pack,
         status: "active",
@@ -83,7 +104,7 @@ export async function POST(req: Request) {
       { data: { sessionId: data.id } },
       { headers: { "Cache-Control": "no-store" } }
     );
-  } catch (err: any) {
+  } catch (err) {
     console.error("[create-case] Fatal:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

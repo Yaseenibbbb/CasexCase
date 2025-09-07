@@ -35,14 +35,22 @@ export async function POST(req: Request) {
     // 1) Generate pack by calling your generator route (which no longer updates DB)
     const entropy = `${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2))}`;
     const baseUrl = getBaseUrl();
+    console.log(`[create-case] Calling generate-case-details with baseUrl: ${baseUrl}`);
     const genRes = await fetch(`${baseUrl}/api/generate-case-details`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
       body: JSON.stringify({ ...meta, entropy_seed: entropy }),
     });
-    const genJson = await genRes.json().catch(() => ({}));
+    
+    console.log(`[create-case] Generate response status: ${genRes.status}`);
+    const genJson = await genRes.json().catch((e) => {
+      console.error(`[create-case] Failed to parse generate response:`, e);
+      return {};
+    });
+    
     if (!genRes.ok || !genJson?.data) {
+      console.error(`[create-case] Generation failed:`, { status: genRes.status, response: genJson });
       return NextResponse.json({ error: genJson?.error || "Generation failed" }, { status: 500 });
     }
     const pack = genJson.data;

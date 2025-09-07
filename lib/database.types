@@ -45,6 +45,7 @@ export interface Database {
           completed: boolean;
           performance_rating: string | null;
           notes: string | null;
+          generated_case_data: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -57,6 +58,7 @@ export interface Database {
           completed?: boolean;
           performance_rating?: string | null;
           notes?: string | null;
+          generated_case_data?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -69,6 +71,7 @@ export interface Database {
           completed?: boolean;
           performance_rating?: string | null;
           notes?: string | null;
+          generated_case_data?: Json | null;
           created_at?: string;
           updated_at?: string;
         };

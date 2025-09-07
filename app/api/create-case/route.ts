@@ -34,7 +34,6 @@ time_limit_minutes: ${meta.time_limit_minutes ?? 30}
 entropy_seed: ${seed}`;
 }
 
-const DEMO_USER = "00000000-0000-0000-0000-000000000000";
 
 export async function POST(req: Request) {
   try {
@@ -49,7 +48,28 @@ export async function POST(req: Request) {
     if (!process.env.OPENAI_API_KEY)
       return NextResponse.json({ error: "OPENAI_API_KEY not set" }, { status: 500 });
 
-    const actualUserId = userId === "demo-user" ? DEMO_USER : userId;
+    const actualUserId = userId === "demo-user" ? "demo-user" : userId;
+
+    // Ensure demo user exists in user_profiles table
+    if (actualUserId === "demo-user") {
+      const { error: profileError } = await supabaseAdmin
+        .from("user_profiles")
+        .upsert({
+          id: "demo-user",
+          full_name: "Demo User",
+          avatar_url: null,
+          streak_count: 5,
+          weekly_goal_hours: 10,
+          streak_last_active: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      
+      if (profileError) {
+        console.error("[create-case] Error creating demo user profile:", profileError);
+        return NextResponse.json({ error: "Failed to create demo user profile" }, { status: 500 });
+      }
+    }
 
     // 1) Generate the case pack - no internal fetch
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

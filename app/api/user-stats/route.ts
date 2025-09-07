@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     }
 
     // Handle demo user with a proper UUID
-    const actualUserId = userId === 'demo-user' ? '00000000-0000-0000-0000-000000000000' : userId;
+    const actualUserId = userId === 'demo-user' ? 'demo-user' : userId;
 
     const { data, error } = await supabaseAdmin
       .from("case_sessions")

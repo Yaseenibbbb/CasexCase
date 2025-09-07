@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     // 1) Generate pack by calling your generator route (which no longer updates DB)
     const entropy = `${Date.now()}-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2))}`;
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+    const baseUrl = getBaseUrl();
     const genRes = await fetch(`${baseUrl}/api/generate-case-details`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

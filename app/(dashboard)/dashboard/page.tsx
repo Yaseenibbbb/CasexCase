@@ -1,6 +1,10 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+
+// Prevent server-side revalidation for this client component
+export const revalidate = false
+export const dynamic = 'force-dynamic'
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
@@ -151,6 +155,21 @@ export default function DashboardPage() {
 
       const { data } = await response.json()
       const id = data.sessionId
+      
+      // Store case data in sessionStorage for offline sessions
+      if (id.startsWith('offline-session-')) {
+        sessionStorage.setItem(`case-session-${id}`, JSON.stringify({
+          id: id,
+          user_id: user.id,
+          case_type: data.caseType,
+          case_title: data.caseTitle,
+          generated_case_data: data.caseData,
+          duration_minutes: 0,
+          completed: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }))
+      }
 
       router.push(`/interview/${id}`)
     } catch (error) {

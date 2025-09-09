@@ -2,8 +2,9 @@
 
 import type React from "react"
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Prevent server-side revalidation for this client component
+export const revalidate = false
+export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
@@ -249,14 +250,29 @@ export default function InterviewPage() {
     const initializeInterview = async () => {
       try {
         setIsLoading(true);
-        const { data: sessionData, error } = await caseService.getCaseSession(id);
-        if (error || !sessionData) {
-          toast({
-            title: "Error",
-            description: "Could not load interview session",
-            variant: "destructive",
-          });
-          return;
+        
+        // Check for offline session data first
+        let sessionData = null;
+        if (id.startsWith('offline-session-')) {
+          const storedData = sessionStorage.getItem(`case-session-${id}`);
+          if (storedData) {
+            sessionData = JSON.parse(storedData);
+            console.log("[Interview] Loaded offline session data:", sessionData);
+          }
+        }
+        
+        // If no offline data found, try to fetch from Supabase
+        if (!sessionData) {
+          const { data, error } = await caseService.getCaseSession(id);
+          if (error || !data) {
+            toast({
+              title: "Error",
+              description: "Could not load interview session",
+              variant: "destructive",
+            });
+            return;
+          }
+          sessionData = data;
         }
         
         setCaseSession(sessionData);
@@ -708,6 +724,20 @@ export default function InterviewPage() {
     if (!caseSession || !user) return
 
     try {
+      // For offline sessions, just update the stored data
+      if (caseSession.id.startsWith('offline-session-')) {
+        const updatedSession = {
+          ...caseSession,
+          duration_minutes: Math.floor(elapsedTime / 60),
+          notes: notes,
+          updated_at: new Date().toISOString()
+        };
+        sessionStorage.setItem(`case-session-${caseSession.id}`, JSON.stringify(updatedSession));
+        setCaseSession(updatedSession);
+        return;
+      }
+
+      // For regular sessions, update in Supabase
       const { error } = await caseService.updateCaseSession(caseSession.id, {
         duration_minutes: Math.floor(elapsedTime / 60),
         notes: notes,
@@ -730,7 +760,29 @@ export default function InterviewPage() {
         mediaRecorder.stop()
       }
 
-      // Update case session as completed
+      // For offline sessions, just update the stored data
+      if (caseSession.id.startsWith('offline-session-')) {
+        const updatedSession = {
+          ...caseSession,
+          completed: true,
+          performance_rating: "Good",
+          duration_minutes: Math.floor(elapsedTime / 60),
+          notes: notes,
+          updated_at: new Date().toISOString()
+        };
+        sessionStorage.setItem(`case-session-${caseSession.id}`, JSON.stringify(updatedSession));
+        console.log("[Interview Page] Offline session completed and stored:", updatedSession);
+
+        toast({
+          title: "Interview Completed",
+          description: "Your offline interview session has been saved locally.",
+        });
+
+        router.push("/dashboard");
+        return;
+      }
+
+      // For online sessions, update via Supabase
       const { error } = await caseService.updateCaseSession(caseSession.id, {
         duration_minutes: Math.floor(elapsedTime / 60),
         notes: notes,

@@ -1,9 +1,7 @@
 "use client"
 
-// Prevent server-side revalidation for this client component
-export const revalidate = false
+// Force dynamic rendering for this client component
 export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
 
 import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"

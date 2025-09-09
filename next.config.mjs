@@ -14,6 +14,9 @@ const nextConfig = {
       allowedOrigins: ['localhost:3000'],
     },
   },
+  // Force dynamic rendering for all pages
+  output: 'standalone',
+  trailingSlash: false,
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

@@ -4,8 +4,6 @@
 export const revalidate = false
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-export const dynamicParams = true
-export const generateStaticParams = () => []
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';

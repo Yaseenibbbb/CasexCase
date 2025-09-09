@@ -14,6 +14,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    // Check if Supabase is available
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('[user-stats] Supabase not configured, returning default stats');
+      return NextResponse.json({ 
+        data: {
+          completedCases: 0,
+          totalPracticeHours: 0,
+          skillAccuracy: { math: 0, structure: 0, creativity: 0 }
+        }
+      });
+    }
+
     // Handle demo user with a proper UUID
     const actualUserId = userId === 'demo-user' ? 'demo-user' : userId;
 
@@ -23,12 +35,13 @@ export async function GET(request: Request) {
       .eq("user_id", actualUserId);
 
     if (error) {
+      console.error('[user-stats] Supabase error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     const stats = {
-      completedCases: data.filter(c => c.completed).length,
-      totalPracticeHours: data.reduce((sum, c) => sum + (c.duration_minutes || 0), 0) / 60,
+      completedCases: (data || []).filter(c => c.completed).length,
+      totalPracticeHours: (data || []).reduce((sum, c) => sum + (c.duration_minutes || 0), 0) / 60,
       skillAccuracy: { math: 0, structure: 0, creativity: 0 } // Placeholder
     };
 

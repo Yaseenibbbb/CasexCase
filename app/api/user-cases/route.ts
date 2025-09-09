@@ -14,6 +14,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    // Check if Supabase is available
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('[user-cases] Supabase not configured, returning empty data');
+      return NextResponse.json({ data: [] });
+    }
+
     // Handle demo user with a proper UUID
     const actualUserId = userId === 'demo-user' ? 'demo-user' : userId;
 
@@ -25,10 +31,11 @@ export async function GET(request: Request) {
       .limit(10);
 
     if (error) {
+      console.error('[user-cases] Supabase error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data || [] });
   } catch (error) {
     console.error('Error fetching user cases:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

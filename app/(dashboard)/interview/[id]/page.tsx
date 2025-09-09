@@ -1339,37 +1339,80 @@ export default function InterviewPage() {
             <Card className="bg-content1/70 backdrop-blur-sm shadow-sm border border-content2/30">
               <CardBody className="p-3">
                 <h3 className="text-base font-semibold mb-1.5 text-foreground line-clamp-1 border-l-2 border-primary pl-2">
-                  {(
-                    caseSession?.generated_case_data?.caseMeta?.title ||
-                    caseSession?.case_title ||
-                    caseSession?.generated_case_data?.caseFacts?.ClientName ||
-                    caseSession?.generated_case_data?.caseFacts?.BuyerName ||
-                    caseSession?.generated_case_data?.caseFacts?.TargetName ||
-                    caseSession?.case_title ||
-                    'Case Study'
-                  )}
+                  {(() => {
+                    // Try to extract title from raw field first
+                    const rawContent = caseSession?.generated_case_data?.raw;
+                    if (rawContent) {
+                      // Extract title from "### Case Pack: [Title]" format
+                      const titleMatch = rawContent.match(/^### Case Pack: (.+)$/m);
+                      if (titleMatch) {
+                        return titleMatch[1].trim();
+                      }
+                    }
+                    
+                    // Fallback to other title sources
+                    return (
+                      caseSession?.generated_case_data?.caseMeta?.title ||
+                      caseSession?.case_title ||
+                      caseSession?.generated_case_data?.caseFacts?.ClientName ||
+                      caseSession?.generated_case_data?.caseFacts?.BuyerName ||
+                      caseSession?.generated_case_data?.caseFacts?.TargetName ||
+                      'Case Study'
+                    );
+                  })()}
                 </h3>
                 <p className="text-sm text-foreground-600 mb-1.5 line-clamp-3">
-                  {(
-                    caseSession?.generated_case_data?.sections?.background ||
-                    caseSession?.generated_case_data?.caseFacts?.CompanyBackground ||
-                    caseSession?.generated_case_data?.caseFacts?.BuyerBackground ||
-                    caseSession?.generated_case_data?.caseFacts?.ClientBackground ||
-                    caseSession?.generated_case_data?.caseFacts?.TargetBackground ||
-                    caseSession?.generated_case_data?.sections?.objectives ||
-                    caseSession?.generated_case_data?.sections?.tasks ||
-                    "This is a case study interview. Work through the problem systematically and provide your recommendations."
-                  )}
+                  {(() => {
+                    // Try to extract description from raw field first
+                    const rawContent = caseSession?.generated_case_data?.raw;
+                    if (rawContent) {
+                      // Remove markdown headers and extract the main content
+                      const cleanContent = rawContent
+                        .replace(/^### Case Pack:.*$/gm, '') // Remove title line
+                        .replace(/^#+.*$/gm, '') // Remove all markdown headers
+                        .replace(/\[\[.*?\]\]/g, '') // Remove solution guide markers
+                        .trim();
+                      
+                      if (cleanContent && cleanContent.length > 50) {
+                        return cleanContent.substring(0, 200) + (cleanContent.length > 200 ? '...' : '');
+                      }
+                    }
+                    
+                    // Fallback to structured data
+                    return (
+                      caseSession?.generated_case_data?.sections?.background ||
+                      caseSession?.generated_case_data?.caseFacts?.CompanyBackground ||
+                      caseSession?.generated_case_data?.caseFacts?.BuyerBackground ||
+                      caseSession?.generated_case_data?.caseFacts?.ClientBackground ||
+                      caseSession?.generated_case_data?.caseFacts?.TargetBackground ||
+                      caseSession?.generated_case_data?.sections?.objectives ||
+                      caseSession?.generated_case_data?.sections?.tasks ||
+                      "This is a case study interview. Work through the problem systematically and provide your recommendations."
+                    );
+                  })()}
                 </p>
                 <p className="text-xs text-foreground-500 mb-1 line-clamp-1">
-                  {(
-                    caseSession?.generated_case_data?.caseMeta?.industry ||
-                    caseSession?.generated_case_data?.caseFacts?.StrategicContext ||
-                    caseSession?.generated_case_data?.caseFacts?.MarketContext ||
-                    caseSession?.generated_case_data?.caseFacts?.Industry ||
-                    caseSession?.case_type ||
-                    ''
-                  )}
+                  {(() => {
+                    // Try to extract industry/context from raw field first
+                    const rawContent = caseSession?.generated_case_data?.raw;
+                    if (rawContent) {
+                      // Look for industry mentions in the content
+                      const industryMatch = rawContent.match(/(?:industry|sector|market):\s*([^\n]+)/i);
+                      if (industryMatch) {
+                        return industryMatch[1].trim();
+                      }
+                    }
+                    
+                    // Fallback to structured data
+                    return (
+                      caseSession?.generated_case_data?.caseMeta?.industry ||
+                      caseSession?.generated_case_data?.caseFacts?.StrategicContext ||
+                      caseSession?.generated_case_data?.caseFacts?.MarketContext ||
+                      caseSession?.generated_case_data?.caseFacts?.Industry ||
+                      caseSession?.case_type ||
+                      ''
+                    );
+                  })()}
                 </p>
                 <div className="text-xs text-foreground-500 bg-content2/30 p-2 rounded-sm">
                   <span className="font-medium text-primary-500">Case Type:</span>{" "}

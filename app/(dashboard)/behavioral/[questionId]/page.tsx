@@ -1,5 +1,10 @@
 "use client";
 
+// Prevent server-side revalidation for this client component
+export const revalidate = false
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CATEGORIZED_BEHAVIORAL_QUESTIONS, BehavioralQuestion, BehavioralQuestionCategory } from '@/lib/data';

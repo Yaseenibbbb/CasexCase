@@ -1,5 +1,10 @@
 "use client"
 
+// Prevent server-side revalidation for this client component
+export const revalidate = false
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 import { CustomPrepForm } from "@/components/CustomPrepForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";

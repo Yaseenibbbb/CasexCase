@@ -1,5 +1,10 @@
 'use client';
 
+// Prevent server-side revalidation for this client component
+export const revalidate = false
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 import React, { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';

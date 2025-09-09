@@ -5,6 +5,7 @@ import type React from "react"
 // Prevent server-side revalidation for this client component
 export const revalidate = false
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"

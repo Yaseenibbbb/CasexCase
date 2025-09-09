@@ -1,10 +1,11 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
-
 // Prevent server-side revalidation for this client component
 export const revalidate = false
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {

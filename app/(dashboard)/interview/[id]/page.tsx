@@ -279,6 +279,10 @@ export default function InterviewPage() {
         setShowLeftPanel_DEBUG(true);
         setShowRightPanel_DEBUG(true);
         
+        // Debug: Log the session data structure
+        console.log("[Interview] Full session data:", sessionData);
+        console.log("[Interview] Generated case data:", sessionData?.generated_case_data);
+        
         // Store structured case context for AI evaluation
         if (sessionData.generated_case_data) {
           const caseData = sessionData.generated_case_data as any;
@@ -1342,7 +1346,7 @@ export default function InterviewPage() {
                     caseSession?.generated_case_data?.caseFacts?.BuyerName ||
                     caseSession?.generated_case_data?.caseFacts?.TargetName ||
                     caseSession?.case_title ||
-                    'Case'
+                    'Case Study'
                   )}
                 </h3>
                 <p className="text-sm text-foreground-600 mb-1.5 line-clamp-3">
@@ -1352,8 +1356,9 @@ export default function InterviewPage() {
                     caseSession?.generated_case_data?.caseFacts?.BuyerBackground ||
                     caseSession?.generated_case_data?.caseFacts?.ClientBackground ||
                     caseSession?.generated_case_data?.caseFacts?.TargetBackground ||
-                    "Generated case" ||
-                    'Case study details will appear here once the case is generated.'
+                    caseSession?.generated_case_data?.sections?.objectives ||
+                    caseSession?.generated_case_data?.sections?.tasks ||
+                    "This is a case study interview. Work through the problem systematically and provide your recommendations."
                   )}
                 </p>
                 <p className="text-xs text-foreground-500 mb-1 line-clamp-1">
@@ -1373,6 +1378,18 @@ export default function InterviewPage() {
                     'Diagnostic'
                   )}
                 </div>
+                
+                {/* Debug: Show raw case data structure */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded text-xs">
+                    <details>
+                      <summary className="cursor-pointer font-medium">Debug: Case Data</summary>
+                      <pre className="mt-1 text-xs overflow-auto max-h-32">
+                        {JSON.stringify(caseSession?.generated_case_data, null, 2)}
+                      </pre>
+                    </details>
+                  </div>
+                )}
               </CardBody>
             </Card>
 

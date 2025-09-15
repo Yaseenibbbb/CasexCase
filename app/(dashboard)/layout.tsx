@@ -114,6 +114,8 @@ export default function DashboardLayout({
 
   console.log("[DashboardLayout] Rendering main layout content");
 
+  const isInterviewPage = pathname.startsWith('/interview/');
+
   return (
     <ThemeProvider 
       attribute="class" 
@@ -123,12 +125,13 @@ export default function DashboardLayout({
       <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
         <TopNavbar />
         
-        <aside 
-          className={cn(
-            "fixed left-0 top-16 bottom-0 flex flex-col border-r bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-slate-200 dark:border-slate-800 transition-[width] duration-200 ease-in-out z-20",
-            open ? EXPANDED_WIDTH : COLLAPSED_WIDTH
-          )}
-        >
+        {!isInterviewPage && (
+          <aside 
+            className={cn(
+              "fixed left-0 top-16 bottom-0 flex flex-col border-r bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-slate-200 dark:border-slate-800 transition-[width] duration-200 ease-in-out z-20",
+              open ? EXPANDED_WIDTH : COLLAPSED_WIDTH
+            )}
+          >
           <nav className="flex-1 overflow-y-auto py-4">
             {navItems.map(({ href, label, icon: Icon }) => {
               const active = pathname === href;
@@ -182,11 +185,12 @@ export default function DashboardLayout({
               )}
             </button>
           </div>
-        </aside>
+          </aside>
+        )}
         <div 
           className={cn(
             "flex flex-1 flex-col transition-all duration-200 pt-16 overflow-hidden",
-            open ? "ml-60" : "ml-16"
+            !isInterviewPage && (open ? "ml-60" : "ml-16")
           )}
         >
           {!pathname.startsWith('/interview/') && <DashboardNavbar />}

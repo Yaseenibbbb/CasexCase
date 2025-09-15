@@ -90,6 +90,31 @@ export default function InterviewPage() {
   const initialLoadTriggeredRef = useRef<boolean>(false);
   // -------------------------------------------
 
+  // --- Humanize AI Response Function ---
+  const humanizeAIResponse = (response: string): string => {
+    return response
+      // Remove all system references and case pack titles
+      .replace(/# Case Pack:.*?(?:\n|$)/gi, '')
+      .replace(/#.*$/gm, '')
+      .replace(/Case Pack:.*?(?:\n|$)/gi, '')
+      .replace(/Global Healthcare Financial Diagnostic/gi, 'MediCare Partners')
+      .replace(/Go-No-Go Decision/gi, 'TechVenture Inc.')
+      .replace(/Energy Sector/gi, 'Energy Solutions Group')
+      // Remove formatting symbols
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/^\s*[-*]\s+/gm, '')
+      .replace(/^\s*#+\s*/gm, '')
+      // Remove technical identifiers
+      .replace(/\[\[.*?\]\]/g, '')
+      .replace(/<END_TURN>/g, '')
+      // Clean up extra whitespace
+      .replace(/\n\s*\n/g, '\n')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+  // -------------------------------------
+
   // --- Calculator Helpers (Keep related logic together) ---
   const closeCalculator = useCallback(() => {
     setShowCalculator(false);
@@ -366,7 +391,7 @@ export default function InterviewPage() {
           const initialMessage = {
             id: Date.now(),
             role: "assistant" as const,
-            content: initialPresentationText.replace(/^#+\s*/gm, '').trim(), // Remove any hash symbols
+            content: humanizeAIResponse(initialPresentationText), // Apply comprehensive cleaning
             timestamp: new Date().toISOString(),
             hasExhibit: false,
             exhibitId: null,
@@ -376,8 +401,8 @@ export default function InterviewPage() {
           setMessages([initialMessage]);
           
           // Start TTS for the initial presentation
-          if (isTtsEnabled && initialPresentationText) {
-            await startSentenceTTS(initialPresentationText);
+          if (isTtsEnabled && initialMessage.content) {
+            await startSentenceTTS(initialMessage.content);
           } else {
             setInteractionState('USER_TURN');
           }
@@ -443,19 +468,17 @@ export default function InterviewPage() {
         const background = generatedData.sections?.background || '';
         const tasks = generatedData.sections?.tasks || '';
         
-        let fullCasePresentation = `Hello! I'm excited to work through this case with you today. We'll be discussing ${caseTitle.replace(/^#+\s*/, '')} involving ${company} in the ${industry} industry.`;
+        let fullCasePresentation = `Hello! Great to meet you today. I'd like you to help our client, ${company || 'Business Solutions Inc.'}, ${industry ? `a ${industry} company` : 'a client company'}. They're facing some strategic challenges and need your help analyzing the situation.`;
         
         if (background) {
-          fullCasePresentation += `\n\nBackground: ${background}`;
+          fullCasePresentation += ` Here's the situation: ${background}`;
         }
         
         if (tasks) {
-          fullCasePresentation += `\n\nYour Task: ${tasks}`;
-        } else {
-          fullCasePresentation += `\n\nYour task is to work through this problem and provide a recommendation.`;
+          fullCasePresentation += ` ${tasks}`;
         }
         
-        fullCasePresentation += `\n\nIn your own words, what's the objective here, and how will you approach the first few minutes?`;
+        fullCasePresentation += ` What are your initial thoughts on how to approach this challenge?`;
         
         initialPresentationText = fullCasePresentation;
         initialExhibits = generatedData?.exhibits || [];
@@ -465,7 +488,7 @@ export default function InterviewPage() {
          console.error("[TRIGGER_INIT] Could not find initialPresentationText in generated_case_data:", generatedData);
          // Create a fallback presentation text instead of throwing error
          const caseType = loadedCaseType?.title || "this case";
-         const fallbackText = `Hello! I'm excited to work through this case with you today. We'll be discussing ${caseType.replace(/^#+\s*/, '')}. Your task today is to work through this case and provide a recommendation. In your own words, what's the objective here, and how will you approach the first few minutes?`;
+         const fallbackText = `Hello! Great to meet you today. I'd like you to help our client, Business Solutions Inc., a client company. They're facing some strategic challenges and need your help analyzing the situation. What are your initial thoughts on how to approach this challenge?`;
          console.log("[TRIGGER_INIT] Using fallback presentation text:", fallbackText);
          
          // Update state with fallback
@@ -938,7 +961,7 @@ export default function InterviewPage() {
 
         if (rawAiResponse) {
             const { prose, exhibits: newExhibits } = parseReply(rawAiResponse);
-            const cleanProse = prose.replace(/^#+\s*/gm, '').trim(); // Remove hash symbols
+            const cleanProse = humanizeAIResponse(prose); // Apply comprehensive cleaning
             console.log("[PROCESS] Parsed AI response - Prose:", cleanProse);
             // --- Log the actual exhibit structure ---
             console.log("[PROCESS] Parsed AI response - Exhibits Structure:", JSON.stringify(newExhibits, null, 2));
@@ -1019,7 +1042,7 @@ export default function InterviewPage() {
 
                 if (rawAiResponse) {
                     const { prose, exhibits: newExhibits } = parseReply(rawAiResponse);
-                    const cleanProse = prose.replace(/^#+\s*/gm, '').trim(); // Remove hash symbols
+                    const cleanProse = humanizeAIResponse(prose); // Apply comprehensive cleaning
                     console.log("[PROCESS] Fallback - Parsed AI response - Prose:", cleanProse);
 
                     const currentExhibitId = newExhibits.length > 0 ? newExhibits[0].id : null; 

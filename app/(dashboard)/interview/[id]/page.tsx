@@ -366,7 +366,7 @@ export default function InterviewPage() {
           const initialMessage = {
             id: Date.now(),
             role: "assistant" as const,
-            content: initialPresentationText,
+            content: initialPresentationText.replace(/^#+\s*/gm, '').trim(), // Remove any hash symbols
             timestamp: new Date().toISOString(),
             hasExhibit: false,
             exhibitId: null,
@@ -443,7 +443,7 @@ export default function InterviewPage() {
         const background = generatedData.sections?.background || '';
         const tasks = generatedData.sections?.tasks || '';
         
-        let fullCasePresentation = `Hello! I'm excited to work through this case with you today. We'll be discussing ${caseTitle} involving ${company} in the ${industry} industry.`;
+        let fullCasePresentation = `Hello! I'm excited to work through this case with you today. We'll be discussing ${caseTitle.replace(/^#+\s*/, '')} involving ${company} in the ${industry} industry.`;
         
         if (background) {
           fullCasePresentation += `\n\nBackground: ${background}`;
@@ -465,7 +465,7 @@ export default function InterviewPage() {
          console.error("[TRIGGER_INIT] Could not find initialPresentationText in generated_case_data:", generatedData);
          // Create a fallback presentation text instead of throwing error
          const caseType = loadedCaseType?.title || "this case";
-         const fallbackText = `Hello! I'm excited to work through this case with you today. We'll be discussing ${caseType}. Your task today is to work through this case and provide a recommendation. In your own words, what's the objective here, and how will you approach the first few minutes?`;
+         const fallbackText = `Hello! I'm excited to work through this case with you today. We'll be discussing ${caseType.replace(/^#+\s*/, '')}. Your task today is to work through this case and provide a recommendation. In your own words, what's the objective here, and how will you approach the first few minutes?`;
          console.log("[TRIGGER_INIT] Using fallback presentation text:", fallbackText);
          
          // Update state with fallback
@@ -938,7 +938,8 @@ export default function InterviewPage() {
 
         if (rawAiResponse) {
             const { prose, exhibits: newExhibits } = parseReply(rawAiResponse);
-            console.log("[PROCESS] Parsed AI response - Prose:", prose);
+            const cleanProse = prose.replace(/^#+\s*/gm, '').trim(); // Remove hash symbols
+            console.log("[PROCESS] Parsed AI response - Prose:", cleanProse);
             // --- Log the actual exhibit structure ---
             console.log("[PROCESS] Parsed AI response - Exhibits Structure:", JSON.stringify(newExhibits, null, 2));
             // -----------------------------------------
@@ -968,15 +969,15 @@ export default function InterviewPage() {
             }
 
             // Play TTS using the new sentence-by-sentence method
-            if (isTtsEnabled && prose) {
-                startSentenceTTS(prose); 
+            if (isTtsEnabled && cleanProse) {
+                startSentenceTTS(cleanProse); 
             } else {
                 // *** If TTS disabled, add the full content as one bubble ***
                 console.log("[PROCESS] TTS not enabled or no prose. Displaying full message.")
                 const fullMessage = {
                     id: Date.now(),
                     role: "assistant" as const,
-                    content: prose,
+                    content: cleanProse,
                     timestamp: new Date().toISOString(),
                     hasExhibit: newExhibits.length > 0,
                     exhibitId: newExhibits.length > 0 ? newExhibits[0].id : null, // Example: link first exhibit
@@ -1018,7 +1019,8 @@ export default function InterviewPage() {
 
                 if (rawAiResponse) {
                     const { prose, exhibits: newExhibits } = parseReply(rawAiResponse);
-                    console.log("[PROCESS] Fallback - Parsed AI response - Prose:", prose);
+                    const cleanProse = prose.replace(/^#+\s*/gm, '').trim(); // Remove hash symbols
+                    console.log("[PROCESS] Fallback - Parsed AI response - Prose:", cleanProse);
 
                     const currentExhibitId = newExhibits.length > 0 ? newExhibits[0].id : null; 
 
@@ -1038,13 +1040,13 @@ export default function InterviewPage() {
                         setExhibits(prevExhibits => [...prevExhibits, ...newExhibits]);
                     }
 
-                    if (isTtsEnabled && prose) {
-                        startSentenceTTS(prose); 
+                    if (isTtsEnabled && cleanProse) {
+                        startSentenceTTS(cleanProse); 
                     } else {
                         const fullMessage = {
                             id: Date.now(),
                             role: "assistant" as const,
-                            content: prose,
+                            content: cleanProse,
                             timestamp: new Date().toISOString(),
                             hasExhibit: newExhibits.length > 0,
                             exhibitId: newExhibits.length > 0 ? newExhibits[0].id : null,
@@ -1194,7 +1196,10 @@ export default function InterviewPage() {
         onExit={handleExitInterview}
         onTtsToggle={(enabled) => setIsTtsEnabled(enabled)} 
         currentStep={currentStep}
-        caseTitle={caseSession?.case_title ?? "Case Interview"}
+        caseTitle={(() => {
+          const title = caseSession?.case_title ?? "Case Interview";
+          return title.replace(/^#+\s*/, '');
+        })()}
         totalDuration={caseDuration}
         onSave={handleSaveProgress}
         onComplete={handleCompleteInterview}
@@ -1344,20 +1349,20 @@ export default function InterviewPage() {
             {/* Case Showcase */}
             <Card className="bg-content1/70 backdrop-blur-sm shadow-sm border border-content2/30">
               <CardBody className="p-3">
-                <h3 className="text-base font-semibold mb-1.5 text-foreground line-clamp-1 border-l-2 border-primary pl-2">
+                <h3 className="text-base font-semibold mb-1.5 text-foreground break-words border-l-2 border-primary pl-2">
                   {(() => {
                     // Try to extract title from raw field first
                     const rawContent = caseSession?.generated_case_data?.raw;
                     if (rawContent) {
-                      // Extract title from "### Case Pack: [Title]" format
+                      // Extract title from "### Case Pack: [Title]" format and remove hash symbols
                       const titleMatch = rawContent.match(/^### Case Pack: (.+)$/m);
                       if (titleMatch) {
-                        return titleMatch[1].trim();
+                        return titleMatch[1].trim().replace(/^#+\s*/, '');
                       }
                     }
                     
-                    // Fallback to other title sources
-                    return (
+                    // Fallback to other title sources and clean them
+                    const title = (
                       caseSession?.generated_case_data?.caseMeta?.title ||
                       caseSession?.case_title ||
                       caseSession?.generated_case_data?.caseFacts?.ClientName ||
@@ -1365,29 +1370,29 @@ export default function InterviewPage() {
                       caseSession?.generated_case_data?.caseFacts?.TargetName ||
                       'Case Study'
                     );
+                    
+                    // Remove any hash symbols from the title
+                    return title.replace(/^#+\s*/, '');
                   })()}
                 </h3>
-                <p className="text-sm text-foreground-600 mb-1.5 line-clamp-3">
+                <div className="text-sm text-foreground-600 mb-1.5 max-h-32 overflow-y-auto break-words whitespace-pre-wrap">
                   {(() => {
                     // Try to get case description from multiple sources
                     const caseData = caseSession?.generated_case_data;
                     
                     // First, try to get background from sections
                     if (caseData?.sections?.background) {
-                      const background = caseData.sections.background;
-                      return background.length > 200 ? background.substring(0, 200) + '...' : background;
+                      return caseData.sections.background;
                     }
                     
                     // Try to get objectives
                     if (caseData?.sections?.objectives) {
-                      const objectives = caseData.sections.objectives;
-                      return objectives.length > 200 ? objectives.substring(0, 200) + '...' : objectives;
+                      return caseData.sections.objectives;
                     }
                     
                     // Try to get tasks
                     if (caseData?.sections?.tasks) {
-                      const tasks = caseData.sections.tasks;
-                      return tasks.length > 200 ? tasks.substring(0, 200) + '...' : tasks;
+                      return caseData.sections.tasks;
                     }
                     
                     // Try to extract from raw content
@@ -1396,15 +1401,13 @@ export default function InterviewPage() {
                       // Look for background section
                       const backgroundMatch = rawContent.match(/## Background\s*([\s\S]*?)(?=##|$)/i);
                       if (backgroundMatch) {
-                        const background = backgroundMatch[1].trim();
-                        return background.length > 200 ? background.substring(0, 200) + '...' : background;
+                        return backgroundMatch[1].trim();
                       }
                       
                       // Look for objectives section
                       const objectivesMatch = rawContent.match(/## Objectives\s*([\s\S]*?)(?=##|$)/i);
                       if (objectivesMatch) {
-                        const objectives = objectivesMatch[1].trim();
-                        return objectives.length > 200 ? objectives.substring(0, 200) + '...' : objectives;
+                        return objectivesMatch[1].trim();
                       }
                     }
                     
@@ -1413,14 +1416,14 @@ export default function InterviewPage() {
                     if (caseFacts) {
                       const background = caseFacts.CompanyBackground || caseFacts.ClientBackground || caseFacts.BuyerBackground || caseFacts.TargetBackground;
                       if (background) {
-                        return background.length > 200 ? background.substring(0, 200) + '...' : background;
+                        return background;
                       }
                     }
                     
                     // Final fallback
                     return "This is a case study interview. Work through the problem systematically and provide your recommendations.";
                   })()}
-                </p>
+                </div>
                 <p className="text-xs text-foreground-500 mb-1 line-clamp-1">
                   {(() => {
                     const caseData = caseSession?.generated_case_data;

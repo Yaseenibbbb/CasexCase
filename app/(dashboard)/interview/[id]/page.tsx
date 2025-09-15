@@ -72,6 +72,7 @@ export default function InterviewPage() {
   const [panelExhibitIndex, setPanelExhibitIndex] = useState(0)
   const [sessionVoiceId, setSessionVoiceId] = useState<string | null>(null)
   const [caseContext, setCaseContext] = useState<any>(null) // Store structured case data for AI context
+  const [hasTriggeredInitialMessage, setHasTriggeredInitialMessage] = useState(false) // Track if initial message was triggered
   
   // --- Add state for conditional rendering (to replace comments) ---
   const [showLeftPanel_DEBUG, setShowLeftPanel_DEBUG] = useState(true); 
@@ -296,10 +297,12 @@ export default function InterviewPage() {
           });
         }
         
-        // Initialize messages if empty
-        if (!messages.length && sessionData.case_type && sessionData.generated_case_data) {
+        // Initialize messages if empty - always trigger initial AI message
+        if (!messages.length && !hasTriggeredInitialMessage && sessionData.case_type && sessionData.generated_case_data) {
           const caseType = CASE_TYPES.find(type => type.id === sessionData.case_type);
           if (caseType) {
+            console.log("[Interview] Triggering initial AI message for case type:", caseType.id);
+            setHasTriggeredInitialMessage(true);
             await triggerInitialAIMessage(caseType, sessionData.generated_case_data);
           }
         }
@@ -319,7 +322,7 @@ export default function InterviewPage() {
       initialLoadTriggeredRef.current = true;
       initializeInterview();
     }
-  }, [id]);
+  }, [id, hasTriggeredInitialMessage]);
 
   // *** Modify function signature to accept generatedData ***
   const triggerInitialAIMessage = async (loadedCaseType: CaseType, generatedData: any) => {
@@ -359,13 +362,15 @@ export default function InterviewPage() {
           const initialPresentationText = data.text;
           const initialExhibits = generatedData?.exhibits || [];
 
-          // Add the initial AI message
+          // Add the initial AI message with proper structure
           const initialMessage = {
             id: Date.now(),
-            type: 'ai' as const,
+            role: "assistant" as const,
             content: initialPresentationText,
-            timestamp: new Date(),
-            isTyping: false
+            timestamp: new Date().toISOString(),
+            hasExhibit: false,
+            exhibitId: null,
+            isEnd: false
           };
 
           setMessages([initialMessage]);
@@ -373,9 +378,10 @@ export default function InterviewPage() {
           // Start TTS for the initial presentation
           if (isTtsEnabled && initialPresentationText) {
             await startSentenceTTS(initialPresentationText);
+          } else {
+            setInteractionState('USER_TURN');
           }
 
-          setInteractionState('USER_TURN');
           return;
         }
       } catch (apiError) {
@@ -437,7 +443,7 @@ export default function InterviewPage() {
         const background = generatedData.sections?.background || '';
         const tasks = generatedData.sections?.tasks || '';
         
-        let fullCasePresentation = `Hello, I'm Polly, your case interviewer. We'll be discussing ${caseTitle} involving ${company} in the ${industry} industry.`;
+        let fullCasePresentation = `Hello! I'm excited to work through this case with you today. We'll be discussing ${caseTitle} involving ${company} in the ${industry} industry.`;
         
         if (background) {
           fullCasePresentation += `\n\nBackground: ${background}`;
@@ -449,7 +455,7 @@ export default function InterviewPage() {
           fullCasePresentation += `\n\nYour task is to work through this problem and provide a recommendation.`;
         }
         
-        fullCasePresentation += `\n\nLet's start by hearing your approach.`;
+        fullCasePresentation += `\n\nIn your own words, what's the objective here, and how will you approach the first few minutes?`;
         
         initialPresentationText = fullCasePresentation;
         initialExhibits = generatedData?.exhibits || [];
@@ -459,7 +465,7 @@ export default function InterviewPage() {
          console.error("[TRIGGER_INIT] Could not find initialPresentationText in generated_case_data:", generatedData);
          // Create a fallback presentation text instead of throwing error
          const caseType = loadedCaseType?.title || "this case";
-         const fallbackText = `Hello, I'm Polly, your case interviewer today. We'll be discussing ${caseType}. Your task today is to work through this case and provide a recommendation. Let's start by hearing your approach to this problem.`;
+         const fallbackText = `Hello! I'm excited to work through this case with you today. We'll be discussing ${caseType}. Your task today is to work through this case and provide a recommendation. In your own words, what's the objective here, and how will you approach the first few minutes?`;
          console.log("[TRIGGER_INIT] Using fallback presentation text:", fallbackText);
          
          // Update state with fallback
@@ -1363,38 +1369,80 @@ export default function InterviewPage() {
                 </h3>
                 <p className="text-sm text-foreground-600 mb-1.5 line-clamp-3">
                   {(() => {
-                    // Try to extract description from raw field first
-                    const rawContent = caseSession?.generated_case_data?.raw;
+                    // Try to get case description from multiple sources
+                    const caseData = caseSession?.generated_case_data;
+                    
+                    // First, try to get background from sections
+                    if (caseData?.sections?.background) {
+                      const background = caseData.sections.background;
+                      return background.length > 200 ? background.substring(0, 200) + '...' : background;
+                    }
+                    
+                    // Try to get objectives
+                    if (caseData?.sections?.objectives) {
+                      const objectives = caseData.sections.objectives;
+                      return objectives.length > 200 ? objectives.substring(0, 200) + '...' : objectives;
+                    }
+                    
+                    // Try to get tasks
+                    if (caseData?.sections?.tasks) {
+                      const tasks = caseData.sections.tasks;
+                      return tasks.length > 200 ? tasks.substring(0, 200) + '...' : tasks;
+                    }
+                    
+                    // Try to extract from raw content
+                    const rawContent = caseData?.raw;
                     if (rawContent) {
-                      // Remove markdown headers and extract the main content
-                      const cleanContent = rawContent
-                        .replace(/^### Case Pack:.*$/gm, '') // Remove title line
-                        .replace(/^#+.*$/gm, '') // Remove all markdown headers
-                        .replace(/\[\[.*?\]\]/g, '') // Remove solution guide markers
-                        .trim();
+                      // Look for background section
+                      const backgroundMatch = rawContent.match(/## Background\s*([\s\S]*?)(?=##|$)/i);
+                      if (backgroundMatch) {
+                        const background = backgroundMatch[1].trim();
+                        return background.length > 200 ? background.substring(0, 200) + '...' : background;
+                      }
                       
-                      if (cleanContent && cleanContent.length > 50) {
-                        return cleanContent.substring(0, 200) + (cleanContent.length > 200 ? '...' : '');
+                      // Look for objectives section
+                      const objectivesMatch = rawContent.match(/## Objectives\s*([\s\S]*?)(?=##|$)/i);
+                      if (objectivesMatch) {
+                        const objectives = objectivesMatch[1].trim();
+                        return objectives.length > 200 ? objectives.substring(0, 200) + '...' : objectives;
                       }
                     }
                     
-                    // Fallback to structured data
-                    return (
-                      caseSession?.generated_case_data?.sections?.background ||
-                      caseSession?.generated_case_data?.caseFacts?.CompanyBackground ||
-                      caseSession?.generated_case_data?.caseFacts?.BuyerBackground ||
-                      caseSession?.generated_case_data?.caseFacts?.ClientBackground ||
-                      caseSession?.generated_case_data?.caseFacts?.TargetBackground ||
-                      caseSession?.generated_case_data?.sections?.objectives ||
-                      caseSession?.generated_case_data?.sections?.tasks ||
-                      "This is a case study interview. Work through the problem systematically and provide your recommendations."
-                    );
+                    // Fallback to case facts
+                    const caseFacts = caseData?.caseFacts;
+                    if (caseFacts) {
+                      const background = caseFacts.CompanyBackground || caseFacts.ClientBackground || caseFacts.BuyerBackground || caseFacts.TargetBackground;
+                      if (background) {
+                        return background.length > 200 ? background.substring(0, 200) + '...' : background;
+                      }
+                    }
+                    
+                    // Final fallback
+                    return "This is a case study interview. Work through the problem systematically and provide your recommendations.";
                   })()}
                 </p>
                 <p className="text-xs text-foreground-500 mb-1 line-clamp-1">
                   {(() => {
-                    // Try to extract industry/context from raw field first
-                    const rawContent = caseSession?.generated_case_data?.raw;
+                    const caseData = caseSession?.generated_case_data;
+                    
+                    // Try to get industry from caseMeta first
+                    if (caseData?.caseMeta?.industry) {
+                      return caseData.caseMeta.industry;
+                    }
+                    
+                    // Try to get company name for context
+                    if (caseData?.caseMeta?.company) {
+                      return caseData.caseMeta.company;
+                    }
+                    
+                    // Try to get from caseFacts
+                    const caseFacts = caseData?.caseFacts;
+                    if (caseFacts) {
+                      return caseFacts.Industry || caseFacts.StrategicContext || caseFacts.MarketContext || '';
+                    }
+                    
+                    // Try to extract from raw content
+                    const rawContent = caseData?.raw;
                     if (rawContent) {
                       // Look for industry mentions in the content
                       const industryMatch = rawContent.match(/(?:industry|sector|market):\s*([^\n]+)/i);
@@ -1403,15 +1451,8 @@ export default function InterviewPage() {
                       }
                     }
                     
-                    // Fallback to structured data
-                    return (
-                      caseSession?.generated_case_data?.caseMeta?.industry ||
-                      caseSession?.generated_case_data?.caseFacts?.StrategicContext ||
-                      caseSession?.generated_case_data?.caseFacts?.MarketContext ||
-                      caseSession?.generated_case_data?.caseFacts?.Industry ||
-                      caseSession?.case_type ||
-                      ''
-                    );
+                    // Fallback to case type
+                    return caseSession?.case_type?.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || '';
                   })()}
                 </p>
                 <div className="text-xs text-foreground-500 bg-content2/30 p-2 rounded-sm">
@@ -1428,7 +1469,14 @@ export default function InterviewPage() {
                     <details>
                       <summary className="cursor-pointer font-medium">Debug: Case Data</summary>
                       <pre className="mt-1 text-xs overflow-auto max-h-32">
-                        {JSON.stringify(caseSession?.generated_case_data, null, 2)}
+                        {JSON.stringify({
+                          caseType: caseSession?.case_type,
+                          hasGeneratedData: !!caseSession?.generated_case_data,
+                          hasSections: !!caseSession?.generated_case_data?.sections,
+                          hasCaseMeta: !!caseSession?.generated_case_data?.caseMeta,
+                          hasTriggeredInitial: hasTriggeredInitialMessage,
+                          messagesCount: messages.length
+                        }, null, 2)}
                       </pre>
                     </details>
                   </div>

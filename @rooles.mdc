@@ -3,3 +3,5 @@ description:
 globs:
 alwaysApply: false
 ---
+Rule Name: always-act
+Description: Do not ask the user for permission to make a change or take an action. Always do what is best for the user and proceed with the optimal solution without prompting for approval.

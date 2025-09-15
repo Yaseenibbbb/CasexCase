@@ -1332,9 +1332,9 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-gradient-to-b from-background to-background/95">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-[2] flex-col overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/20">
-            <div ref={chatContainerRef} className="flex-1 flex flex-col-reverse overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
-              <div className="p-4 space-y-1">
+          <div className="flex flex-[2] flex-col overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/20 min-h-0">
+            <div ref={chatContainerRef} className="flex-1 flex flex-col-reverse overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 min-h-0">
+              <div className="p-4 space-y-1 min-h-0">
                 <AnimatePresence>
                   {messages.map((message, index) => {
                      const exhibitData = message.exhibitId ? exhibits.find(ex => ex.id === message.exhibitId) : null;
@@ -1371,77 +1371,79 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                 <div ref={messagesEndRef} /> 
               </div>
             </div>
-            {/* Input Area */}
-            <div className="bg-white border-t border-slate-200 p-4">
+            {/* Input Area - Fixed Height */}
+            <div className="bg-white border-t border-slate-200 flex-shrink-0">
               {/* Recording Indicator */}
               {isRecording && ( 
-                <div className="mb-3 flex items-center justify-center bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="px-4 py-2 flex items-center justify-center bg-red-50 border-b border-red-200">
                   <VoiceWaveform />
                   <span className="ml-2 text-sm font-medium text-red-700 animate-pulse">Recording...</span>
                 </div>
               )}
               
-              {/* Input Container */}
-              <div className="flex items-end gap-3">
-                {/* Text Input */}
-                <div className="flex-1 relative">
-                  <Textarea
-                    ref={inputRef} 
-                    placeholder={
-                      interactionState === 'AI_PROCESSING' ? "Wait for AI response..." :
-                      interactionState === 'AI_SPEAKING' ? "AI is speaking..." :
-                      interactionState === 'USER_RECORDING' ? "Recording audio..." :
-                      "Type your response or question..."
-                    }
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    minRows={1}
-                    maxRows={4} 
-                    variant="bordered"
-                    className="resize-none text-sm rounded-2xl border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm"
-                    isDisabled={(interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'IDLE'} 
-                    aria-label="Chat input"
-                  />
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2">
-                  {/* Voice Recording Button */}
-                  <Tooltip content={isRecording ? "Stop Recording" : "Start Recording"} placement="top">
-                    <Button
-                      variant="flat" 
-                      size="md" 
-                      isIconOnly 
-                      onClick={isRecording ? handleStopRecording : handleStartRecording}
-                      isDisabled={((interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'USER_RECORDING') || ((interactionState as InteractionState) === 'USER_RECORDING' && !isRecording)} 
-                      aria-label={isRecording ? "Stop Recording" : "Start Recording"}
-                      className={cn(
-                        "rounded-full transition-all duration-200",
-                        isRecording 
-                          ? "bg-red-100 text-red-600 border border-red-200 animate-pulse hover:bg-red-200" 
-                          : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 hover:shadow-md"
-                      )}
-                    >
-                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />} 
-                    </Button>
-                  </Tooltip>
+              {/* Input Container - Fixed Height */}
+              <div className="p-4">
+                <div className="flex items-end gap-3 max-h-32">
+                  {/* Text Input - Constrained */}
+                  <div className="flex-1 relative min-h-0">
+                    <Textarea
+                      ref={inputRef} 
+                      placeholder={
+                        interactionState === 'AI_PROCESSING' ? "Wait for AI response..." :
+                        interactionState === 'AI_SPEAKING' ? "AI is speaking..." :
+                        interactionState === 'USER_RECORDING' ? "Recording audio..." :
+                        "Type your response or question..."
+                      }
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      minRows={1}
+                      maxRows={3} 
+                      variant="bordered"
+                      className="resize-none text-sm rounded-xl border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm min-h-[40px] max-h-[80px]"
+                      isDisabled={(interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'IDLE'} 
+                      aria-label="Chat input"
+                    />
+                  </div>
                   
-                  {/* Send Button */}
-                  <Tooltip content="Send Message" placement="top">
-                    <Button
-                      color="primary" 
-                      size="md" 
-                      isIconOnly
-                      onClick={handleSendMessage}
-                      isDisabled={!inputMessage.trim() || (interactionState as InteractionState) !== 'USER_TURN' || isRecording} 
-                      isLoading={(interactionState as InteractionState) === 'AI_PROCESSING'} 
-                      aria-label="Send message"
-                      className="rounded-full shadow-md hover:shadow-lg transition-all duration-200 bg-blue-600 hover:bg-blue-700"
-                    >
-                      {! ((interactionState as InteractionState) === 'AI_PROCESSING') && <Send className="h-4 w-4" />}
-                    </Button>
-                  </Tooltip>
+                  {/* Action Buttons - Fixed Size */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Voice Recording Button */}
+                    <Tooltip content={isRecording ? "Stop Recording" : "Start Recording"} placement="top">
+                      <Button
+                        variant="flat" 
+                        size="sm" 
+                        isIconOnly 
+                        onClick={isRecording ? handleStopRecording : handleStartRecording}
+                        isDisabled={((interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'USER_RECORDING') || ((interactionState as InteractionState) === 'USER_RECORDING' && !isRecording)} 
+                        aria-label={isRecording ? "Stop Recording" : "Start Recording"}
+                        className={cn(
+                          "rounded-full transition-all duration-200 w-10 h-10",
+                          isRecording 
+                            ? "bg-red-100 text-red-600 border border-red-200 animate-pulse hover:bg-red-200" 
+                            : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 hover:shadow-md"
+                        )}
+                      >
+                        {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />} 
+                      </Button>
+                    </Tooltip>
+                    
+                    {/* Send Button */}
+                    <Tooltip content="Send Message" placement="top">
+                      <Button
+                        color="primary" 
+                        size="sm" 
+                        isIconOnly
+                        onClick={handleSendMessage}
+                        isDisabled={!inputMessage.trim() || (interactionState as InteractionState) !== 'USER_TURN' || isRecording} 
+                        isLoading={(interactionState as InteractionState) === 'AI_PROCESSING'} 
+                        aria-label="Send message"
+                        className="rounded-full shadow-md hover:shadow-lg transition-all duration-200 bg-blue-600 hover:bg-blue-700 w-10 h-10"
+                      >
+                        {! ((interactionState as InteractionState) === 'AI_PROCESSING') && <Send className="h-4 w-4" />}
+                      </Button>
+                    </Tooltip>
+                  </div>
                 </div>
               </div>
             </div>

@@ -191,7 +191,7 @@ export default function DashboardPage() {
     : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6 dashboard-content">
+    <div className="h-full bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6 dashboard-content overflow-y-auto">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Resume Banner */}

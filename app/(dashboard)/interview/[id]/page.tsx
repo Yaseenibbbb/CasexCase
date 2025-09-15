@@ -1234,7 +1234,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
   }
 
   return (
-    <div className="flex h-screen max-h-screen w-full flex-col bg-background overflow-hidden">
+    <div className="flex h-screen w-full flex-col bg-background overflow-hidden">
       <InterviewHeader
         caseType={caseTypeData ?? null}
         elapsedTime={elapsedTime}
@@ -1278,11 +1278,11 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
       )}
 
       {/* Main Content Area */}
-      <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden bg-gradient-to-b from-background to-background/95">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-gradient-to-b from-background to-background/95">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-1 flex-col min-h-0 p-2 sm:p-3 lg:p-4 space-y-4 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/30">
-            <div ref={chatContainerRef} className="flex-1 min-h-0 flex flex-col-reverse overflow-y-auto pr-1 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
+          <div className="flex flex-1 flex-col p-2 sm:p-3 lg:p-4 space-y-4 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/30">
+            <div ref={chatContainerRef} className="flex-1 flex flex-col-reverse overflow-y-auto pr-1 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
               <div className="space-y-3 pb-2">
                 <AnimatePresence>
                   {messages.map((message, index) => {
@@ -1392,7 +1392,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
         )}
         {/* Right Panel - Conditionally Rendered */}
         {showRightPanel_DEBUG && (
-          <div className="flex flex-col w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-l border-slate-200 p-4 sm:p-5 space-y-4 bg-slate-50/50 backdrop-blur-sm overflow-y-auto h-60 lg:h-full min-h-0 order-1 lg:order-2">
+          <div className="flex flex-col w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-l border-slate-200 p-4 sm:p-5 space-y-4 bg-slate-50/50 backdrop-blur-sm overflow-y-auto flex-1 order-1 lg:order-2">
             <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
               <span className="inline-block w-1.5 h-5 bg-blue-500 rounded-sm"></span> 
               Tools & Exhibits

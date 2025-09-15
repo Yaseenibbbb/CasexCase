@@ -120,7 +120,7 @@ export default function DashboardLayout({
       defaultTheme="dark" 
       enableSystem
     >
-      <div className="flex min-h-screen w-full bg-slate-50 dark:bg-slate-950">
+      <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
         <TopNavbar />
         
         <aside 
@@ -185,7 +185,7 @@ export default function DashboardLayout({
         </aside>
         <div 
           className={cn(
-            "flex flex-1 flex-col transition-all duration-200 pt-16",
+            "flex flex-1 flex-col transition-all duration-200 pt-16 overflow-hidden",
             open ? "ml-60" : "ml-16"
           )}
         >
@@ -193,7 +193,7 @@ export default function DashboardLayout({
           
           <main className={cn(
             "flex-1 overflow-y-auto px-4 sm:px-6 py-6",
-            !pathname.startsWith('/interview/') && "pt-20"
+            !pathname.startsWith('/interview/') && "pt-4"
           )}>
             {children}
           </main>

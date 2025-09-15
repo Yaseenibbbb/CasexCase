@@ -318,6 +318,7 @@ export default function InterviewPage() {
   // Fetch case session data
   useEffect(() => {
     const initializeInterview = async () => {
+      console.log("[Interview] 🔄 initializeInterview called");
       try {
         setIsLoading(true);
         
@@ -368,14 +369,24 @@ export default function InterviewPage() {
         }
         
         // Initialize messages if empty - always trigger initial AI message
+        console.log("[Interview] Checking initial message conditions:", {
+          messagesLength: messages.length,
+          hasTriggeredInitialMessage,
+          initialMessageTriggeredRef: initialMessageTriggeredRef.current,
+          hasCaseType: !!sessionData.case_type,
+          hasGeneratedData: !!sessionData.generated_case_data
+        });
+        
         if (!messages.length && !hasTriggeredInitialMessage && !initialMessageTriggeredRef.current && sessionData.case_type && sessionData.generated_case_data) {
           const caseType = CASE_TYPES.find(type => type.id === sessionData.case_type);
           if (caseType) {
-            console.log("[Interview] Triggering initial AI message for case type:", caseType.id);
+            console.log("[Interview] ✅ TRIGGERING initial AI message for case type:", caseType.id);
             initialMessageTriggeredRef.current = true; // Set ref first to prevent race conditions
             setHasTriggeredInitialMessage(true);
             await triggerInitialAIMessage(caseType, sessionData.generated_case_data);
           }
+        } else {
+          console.log("[Interview] ❌ NOT triggering initial message - conditions not met");
         }
       } catch (error) {
         console.error("Failed to initialize interview:", error);
@@ -390,18 +401,29 @@ export default function InterviewPage() {
     };
 
     if (id && !initialLoadTriggeredRef.current) {
+      console.log("[Interview] 🎯 Calling initializeInterview for id:", id);
       initialLoadTriggeredRef.current = true;
       initializeInterview();
+    } else {
+      console.log("[Interview] ❌ NOT calling initializeInterview:", {
+        hasId: !!id,
+        initialLoadTriggered: initialLoadTriggeredRef.current
+      });
     }
   }, [id]);
 
   // *** Modify function signature to accept generatedData ***
   const triggerInitialAIMessage = async (loadedCaseType: CaseType, generatedData: any) => {
-    console.log(`[TRIGGER_INIT] Entered triggerInitialAIMessage for case type: ${loadedCaseType.id}`);
+    console.log(`[TRIGGER_INIT] 🚀 Entered triggerInitialAIMessage for case type: ${loadedCaseType.id}`);
+    console.log(`[TRIGGER_INIT] Current state:`, {
+      initialMessageTriggeredRef: initialMessageTriggeredRef.current,
+      hasTriggeredInitialMessage,
+      messagesLength: messages.length
+    });
     
     // Double-check that we haven't already triggered this
     if (initialMessageTriggeredRef.current && hasTriggeredInitialMessage) {
-      console.log(`[TRIGGER_INIT] Already triggered, skipping...`);
+      console.log(`[TRIGGER_INIT] ❌ Already triggered, skipping...`);
       return;
     }
 

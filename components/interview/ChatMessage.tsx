@@ -38,28 +38,34 @@ export function ChatMessage({ message, exhibitData, showLabel, onExhibitClick }:
   return (
     <div
       className={cn(
-        "flex gap-3 mb-4 last:mb-0 group",
-        isAI ? "max-w-[80%]" : "max-w-[80%] ml-auto",
+        "flex gap-4 mb-6 last:mb-0 group",
+        isAI ? "max-w-[85%]" : "max-w-[85%] ml-auto flex-row-reverse",
         isCollapsed ? "opacity-80" : ""
       )}
     >
       <Avatar 
          {...avatarProps} 
          size="md" 
-         className="mt-1 flex-shrink-0"
+         className={cn(
+           "mt-1 flex-shrink-0",
+           isAI ? "bg-slate-100 text-slate-600" : "bg-blue-100 text-blue-600"
+         )}
       />
 
       <div className="flex-1 min-w-0">
         <div className={cn(
-           "flex items-center justify-between mb-1 h-5",
+           "flex items-center justify-between mb-2 h-6",
            !showLabel && "mb-0"
            )}>
           {showLabel ? (
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-small text-foreground">
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "font-semibold text-sm",
+                isAI ? "text-slate-700" : "text-blue-700"
+              )}>
                 {isAI ? "Interviewer" : "You"}
               </span>
-              <span className="text-tiny text-foreground-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <span className="text-xs text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 {formattedTime}
               </span>
             </div>
@@ -70,7 +76,7 @@ export function ChatMessage({ message, exhibitData, showLabel, onExhibitClick }:
             isIconOnly
             variant="light"
             size="sm"
-            className="text-foreground-400 ml-auto data-[hover=true]:bg-content2 rounded-full w-6 h-6 min-w-0"
+            className="text-slate-400 ml-auto data-[hover=true]:bg-slate-100 rounded-full w-6 h-6 min-w-0"
             onClick={() => setIsCollapsed(!isCollapsed)}
             aria-label={isCollapsed ? "Expand message" : "Collapse message"}
           >
@@ -78,44 +84,47 @@ export function ChatMessage({ message, exhibitData, showLabel, onExhibitClick }:
           </Button>
         </div>
 
-        <Card 
-            shadow="sm" 
+        <div 
             className={cn(
-               "w-full",
-               isAI ? "bg-content2" : "bg-primary text-primary-foreground",
+               "w-full rounded-xl shadow-sm border transition-all duration-200",
+               isAI 
+                 ? "bg-slate-50 border-slate-200 hover:shadow-md" 
+                 : "bg-white border-slate-200 hover:shadow-md",
+               isCollapsed && "line-clamp-1 overflow-hidden"
             )}
          >
-            <CardBody className={cn(
-               "p-3 text-small",
+            <div className={cn(
+               "p-4",
                isCollapsed && "line-clamp-1 overflow-hidden"
                )}>
-                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                <div className={cn(
+                  "text-sm leading-relaxed whitespace-pre-wrap",
+                  isAI ? "text-slate-800" : "text-slate-700"
+                )}>
                   {message.content}
                 </div>
 
                 {exhibitData && (
-                  <Card shadow="none" className="mt-3 pt-3 border-t border-divider bg-transparent"> 
-                      <CardBody className="p-0">
-                           <div className="mb-2 p-2 bg-background/50 rounded-md border border-dashed border-divider">
-                              <p className="text-tiny font-medium text-foreground-600 mb-0.5">Exhibit Preview:</p>
-                              <p className="text-small font-semibold text-foreground truncate">{exhibitData.title}</p>
-                              <p className="text-tiny text-foreground-500">Type: {exhibitData.type}</p>
-                           </div>
-                           <Button
-                              size="sm"
-                              variant="flat"
-                              color="default"
-                              startContent={<ImageIcon className="h-3.5 w-3.5" />}
-                              className="text-tiny h-7"
-                              onClick={onExhibitClick}
-                           >
-                              View Full Exhibit
-                           </Button>
-                      </CardBody>
-                  </Card>
+                  <div className="mt-4 pt-4 border-t border-slate-200"> 
+                      <div className="mb-3 p-3 bg-white/80 rounded-lg border border-dashed border-slate-300">
+                          <p className="text-xs font-medium text-slate-600 mb-1">Exhibit Preview:</p>
+                          <p className="text-sm font-semibold text-slate-800 truncate">{exhibitData.title}</p>
+                          <p className="text-xs text-slate-500">Type: {exhibitData.type}</p>
+                      </div>
+                      <Button
+                         size="sm"
+                         variant="flat"
+                         color="default"
+                         startContent={<ImageIcon className="h-3.5 w-3.5" />}
+                         className="text-xs h-8 bg-slate-100 hover:bg-slate-200 text-slate-700"
+                         onClick={onExhibitClick}
+                      >
+                         View Full Exhibit
+                      </Button>
+                  </div>
                 )}
-            </CardBody>
-        </Card>
+            </div>
+        </div>
       </div>
     </div>
   )

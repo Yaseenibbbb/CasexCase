@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { X, Clock, Wifi, WifiOff, HelpCircle, Volume2, VolumeX } from "lucide-react"
 import { Button, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Tooltip, Switch, useDisclosure, Spacer } from "@heroui/react"
 import type { CaseType } from "@/lib/data"
+import { cn } from "@/lib/utils"
 
 interface InterviewHeaderProps {
   caseType: CaseType | null
@@ -60,45 +61,51 @@ export function InterviewHeader({
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-lg bg-background/90 border-b border-divider shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-4 py-3">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-lg bg-white/95 border-b border-slate-200 shadow-lg">
+        <div className="max-w-screen-2xl mx-auto px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-4 min-w-0">
               <Tooltip content="Exit Interview" placement="bottom">
                   <Button
                     isIconOnly
                     variant="light"
                     aria-label="Exit Interview"
                     onClick={openExitModal}
-                    className="text-foreground-500"
+                    className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"
                   >
                     <X size={20} />
                   </Button>
               </Tooltip>
 
               <div className="min-w-0">
-                <h1 className="font-semibold text-lg text-foreground truncate">
+                <h1 className="font-bold text-xl text-slate-800 truncate">
                   {caseTitle || "Case Interview"}
                 </h1>
-                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                <div className="flex items-center gap-3 mt-1 flex-wrap">
                   {caseType && (
-                    <Chip size="sm" variant="flat" color="secondary">
+                    <Chip size="sm" variant="flat" className="bg-blue-100 text-blue-700 border border-blue-200">
                       {caseType?.difficulty || "Intermediate"}
                     </Chip>
                   )}
                   <Chip 
                     size="sm" 
-                    variant="light" 
-                    color={getTimerColor()} 
+                    variant="flat"
+                    className={cn(
+                      "font-mono font-semibold",
+                      isVeryLowTime ? "bg-red-100 text-red-700 border border-red-200" :
+                      isLowTime ? "bg-orange-100 text-orange-700 border border-orange-200" :
+                      "bg-slate-100 text-slate-700 border border-slate-200"
+                    )}
                     startContent={<Clock size={14} />}
-                    className="font-mono"
                   >
                     {formatTime(remainingTime)}
                   </Chip>
                   <Chip 
                     size="sm" 
-                    variant="light" 
-                    color={isConnected ? "success" : "danger"} 
+                    variant="flat"
+                    className={cn(
+                      isConnected ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"
+                    )}
                     startContent={isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
                   >
                     {isConnected ? "Online" : "Offline"}
@@ -107,7 +114,7 @@ export function InterviewHeader({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Tooltip content={isTtsEnabled ? "Disable AI Voice (TTS)" : "Enable AI Voice (TTS)"} placement="bottom">
                   <Switch
                      isSelected={isTtsEnabled}
@@ -120,18 +127,17 @@ export function InterviewHeader({
               </Tooltip>
 
               <Tooltip content="Help & Shortcuts" placement="bottom">
-                  <Button isIconOnly variant="light" aria-label="Help" className="text-foreground-500">
+                  <Button isIconOnly variant="light" aria-label="Help" className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
                      <HelpCircle size={18} />
                   </Button>
               </Tooltip>
-              <Spacer x={2} />
             </div>
           </div>
         </div>
       </header>
       
       {/* Add invisible spacer to prevent content from being hidden under the fixed header */}
-      <div className="h-[64px] w-full"></div>
+      <div className="h-[72px] w-full"></div>
 
       <Modal isOpen={isExitModalOpen} onOpenChange={onExitModalOpenChange} backdrop="blur">
         <ModalContent>

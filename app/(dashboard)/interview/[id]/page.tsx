@@ -1281,7 +1281,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
       <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden bg-gradient-to-b from-background to-background/95">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-1 flex-col min-h-0 p-2 sm:p-3 lg:p-4 space-y-3 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-divider/30">
+          <div className="flex flex-1 flex-col min-h-0 p-3 sm:p-4 lg:p-5 space-y-4 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/30">
             <div ref={chatContainerRef} className="flex-1 min-h-0 flex flex-col-reverse overflow-y-auto pr-1 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
               <div className="space-y-3 pb-2">
                 <AnimatePresence>
@@ -1318,26 +1318,26 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                   })}
                 </AnimatePresence>
                 {interactionState === 'AI_PROCESSING' && (
-                  <div className="flex justify-start max-w-[80%] ml-1 sm:ml-3">
-                     <Card shadow="sm" className="bg-content2/80 border border-content2">
-                        <CardBody className="flex-row items-center gap-2 py-1.5 px-3">
+                  <div className="flex justify-start max-w-[85%] ml-1 sm:ml-3">
+                     <div className="bg-slate-100 border border-slate-200 rounded-xl shadow-sm p-3">
+                        <div className="flex items-center gap-3">
                            <Spinner size="sm" color="primary" />
-                           <span className="text-small text-foreground-500">AI is thinking...</span>
-                        </CardBody>
-                     </Card>
+                           <span className="text-sm text-slate-600 font-medium">AI is thinking...</span>
+                        </div>
+                     </div>
                   </div> 
                 )}
                 <div ref={messagesEndRef} /> 
               </div>
             </div>
-            <div className="relative border-t border-divider/50 pt-3 bg-background/50 backdrop-blur-sm rounded-t-md">
+            <div className="relative border-t border-slate-200 pt-4 bg-white/80 backdrop-blur-sm rounded-t-lg shadow-lg">
                {isRecording && ( 
-                  <div className="absolute bottom-full left-0 right-0 flex justify-center items-center bg-background/80 backdrop-blur-sm p-1.5 rounded-t-lg z-10 border-t border-l border-r border-danger/20">
+                  <div className="absolute bottom-full left-0 right-0 flex justify-center items-center bg-red-50/90 backdrop-blur-sm p-2 rounded-t-lg z-10 border-t border-l border-r border-red-200">
                      <VoiceWaveform />
-                     <span className="ml-2 text-sm font-medium text-danger animate-pulse">Recording...</span>
+                     <span className="ml-2 text-sm font-medium text-red-700 animate-pulse">Recording...</span>
                   </div>
                 )}
-               <div className="flex items-end space-x-2">
+               <div className="flex items-end space-x-3">
                 <Textarea
                    ref={inputRef} 
                    placeholder={
@@ -1352,19 +1352,23 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                    minRows={1}
                    maxRows={5} 
                    variant="bordered"
-                   className="flex-1 resize-none text-sm rounded-lg"
+                   className="flex-1 resize-none text-sm rounded-xl border-slate-200 focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                    isDisabled={(interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'IDLE'} 
                    aria-label="Chat input"
                  />
-                 <div className="flex items-center space-x-1.5">
+                 <div className="flex items-center space-x-2">
                     <Tooltip content={isRecording ? "Stop Recording" : "Start Recording"} placement="top">
                         <Button
                           variant="flat" size="md" isIconOnly 
                           onClick={isRecording ? handleStopRecording : handleStartRecording}
                           isDisabled={((interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'USER_RECORDING') || ((interactionState as InteractionState) === 'USER_RECORDING' && !isRecording)} 
                           aria-label={isRecording ? "Stop Recording" : "Start Recording"}
-                          color={isRecording ? "danger" : "default"} 
-                          className={`rounded-full ${isRecording ? 'animate-pulse bg-danger/20' : ''}`}
+                          className={cn(
+                            "rounded-full shadow-md transition-all duration-200",
+                            isRecording 
+                              ? "bg-red-100 text-red-600 border border-red-200 animate-pulse hover:bg-red-200" 
+                              : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 hover:shadow-lg"
+                          )}
                         >
                           {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />} 
                         </Button>
@@ -1376,7 +1380,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                           isDisabled={!inputMessage.trim() || (interactionState as InteractionState) !== 'USER_TURN' || isRecording} 
                           isLoading={(interactionState as InteractionState) === 'AI_PROCESSING'} 
                           aria-label="Send message"
-                          className="rounded-full"
+                          className="rounded-full shadow-md hover:shadow-lg transition-all duration-200 bg-blue-600 hover:bg-blue-700"
                         >
                           {! ((interactionState as InteractionState) === 'AI_PROCESSING') && <Send className="h-4 w-4" />}
                         </Button>
@@ -1388,16 +1392,16 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
         )}
         {/* Right Panel - Conditionally Rendered */}
         {showRightPanel_DEBUG && (
-          <div className="flex flex-col w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-l border-divider/30 p-3 sm:p-4 space-y-3 bg-content1/30 backdrop-blur-sm overflow-y-auto h-60 lg:h-full min-h-0 order-1 lg:order-2">
-            <h2 className="text-lg font-medium text-foreground flex items-center gap-2">
-              <span className="inline-block w-1.5 h-4 bg-primary rounded-sm"></span> 
+          <div className="flex flex-col w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-l border-slate-200 p-4 sm:p-5 space-y-4 bg-slate-50/50 backdrop-blur-sm overflow-y-auto h-60 lg:h-full min-h-0 order-1 lg:order-2">
+            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <span className="inline-block w-1.5 h-5 bg-blue-500 rounded-sm"></span> 
               Tools & Exhibits
             </h2>
 
             {/* Case Showcase */}
-            <Card className="bg-content1/70 backdrop-blur-sm shadow-sm border border-content2/30">
-              <CardBody className="p-3">
-                <h3 className="text-base font-semibold mb-1.5 text-foreground break-words border-l-2 border-primary pl-2">
+            <Card className="bg-white/90 backdrop-blur-sm shadow-md border border-slate-200 hover:shadow-lg transition-shadow duration-200">
+              <CardBody className="p-4">
+                <h3 className="text-lg font-semibold mb-2 text-slate-800 break-words border-l-3 border-blue-500 pl-3">
                   {(() => {
                     // Try to extract title from raw field first
                     const rawContent = caseSession?.generated_case_data?.raw;
@@ -1423,7 +1427,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                     return title.replace(/^#+\s*/, '');
                   })()}
                 </h3>
-                <div className="text-sm text-foreground-600 mb-1.5 max-h-32 overflow-y-auto break-words whitespace-pre-wrap">
+                <div className="text-sm text-slate-700 mb-3 max-h-32 overflow-y-auto break-words whitespace-pre-wrap leading-relaxed">
                   {(() => {
                     // Try to get case description from multiple sources
                     const caseData = caseSession?.generated_case_data;
@@ -1472,7 +1476,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                     return "This is a case study interview. Work through the problem systematically and provide your recommendations.";
                   })()}
                 </div>
-                <p className="text-xs text-foreground-500 mb-1 line-clamp-1">
+                <p className="text-xs text-slate-600 mb-2 line-clamp-1 font-medium">
                   {(() => {
                     const caseData = caseSession?.generated_case_data;
                     
@@ -1506,8 +1510,8 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                     return caseSession?.case_type?.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || '';
                   })()}
                 </p>
-                <div className="text-xs text-foreground-500 bg-content2/30 p-2 rounded-sm">
-                  <span className="font-medium text-primary-500">Case Type:</span>{" "}
+                <div className="text-xs text-slate-600 bg-slate-100 p-3 rounded-lg border border-slate-200">
+                  <span className="font-semibold text-blue-600">Case Type:</span>{" "}
                   {(
                     caseSession?.case_type?.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) ||
                     'Diagnostic'
@@ -1536,10 +1540,10 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
             </Card>
 
             {/* Progress Meter */}
-            <div className="bg-content1/70 backdrop-blur-sm shadow-sm border border-content2/30 rounded-lg p-3">
-              <div className="flex justify-between items-center mb-1.5">
-                <h3 className="text-sm font-medium text-foreground-600">Progress</h3>
-                <span className="text-xs font-medium text-primary-500">{Math.round(progressPercent)}%</span>
+            <div className="bg-white/90 backdrop-blur-sm shadow-md border border-slate-200 rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-sm font-semibold text-slate-700">Progress</h3>
+                <span className="text-sm font-bold text-blue-600">{Math.round(progressPercent)}%</span>
               </div>
               <ProgressMeter 
                 currentStep={currentStep}
@@ -1548,16 +1552,16 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
 
             {/* Tool Buttons */}
             <div className="mt-auto pt-2">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="col-span-2 mb-1">
-                  <h3 className="text-sm font-medium text-foreground-600 mb-1.5">Interview Tools</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 mb-2">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-2">Interview Tools</h3>
                 </div>
                 {/* Calculator Button */}
                 <Button 
                   variant="flat" 
                   onClick={() => setShowCalculator(prev => !prev)}
                   startContent={<Calculator size={14} />}
-                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium"
+                  className="text-xs bg-white hover:bg-slate-50 font-medium border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200"
                   size="sm"
                 >
                   Calculator
@@ -1568,7 +1572,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                   onClick={handleToggleExhibitPanel}
                   isDisabled={exhibits.length === 0}
                   startContent={<FileText size={14} />}
-                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium"
+                  className="text-xs bg-white hover:bg-slate-50 font-medium border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50"
                   size="sm"
                 >
                   {showExhibit ? "Hide Exhibits" : "Show Exhibits"}
@@ -1578,7 +1582,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                   variant="flat" 
                   onClick={() => setShowNotes(prev => !prev)}
                   startContent={<Notebook size={14} />}
-                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium"
+                  className="text-xs bg-white hover:bg-slate-50 font-medium border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200"
                   size="sm"
                 >
                   Scratchpad
@@ -1589,7 +1593,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                   onClick={handleAddClarification}
                   isDisabled={interactionState !== 'AI_SPEAKING' && interactionState !== 'AI_PROCESSING'}
                   startContent={<HelpCircle size={14} />}
-                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="text-xs bg-white hover:bg-slate-50 font-medium border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50"
                   size="sm"
                 >
                   Clarify
@@ -1599,7 +1603,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                   variant="flat" 
                   onClick={() => setIsPaused(prev => !prev)}
                   startContent={isPaused ? <PlayCircle size={14} /> : <PauseCircle size={14} />}
-                  className="text-xs bg-content2/40 hover:bg-content2/70 font-medium"
+                  className="text-xs bg-white hover:bg-slate-50 font-medium border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md transition-all duration-200"
                   size="sm"
                 >
                   {isPaused ? "Resume" : "Pause"}
@@ -1610,7 +1614,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                   color="danger"
                   onClick={handleCompleteInterview}
                   startContent={<XCircle size={14} />}
-                  className="text-xs bg-danger/10 hover:bg-danger/20 font-medium"
+                  className="text-xs bg-red-50 hover:bg-red-100 font-medium border border-red-200 hover:border-red-300 text-red-700 shadow-sm hover:shadow-md transition-all duration-200"
                   size="sm"
                 >
                   End Case

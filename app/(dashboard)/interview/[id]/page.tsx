@@ -1281,7 +1281,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
       <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden bg-gradient-to-b from-background to-background/95">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-1 flex-col min-h-0 p-3 sm:p-4 lg:p-5 space-y-4 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/30">
+          <div className="flex flex-1 flex-col min-h-0 p-2 sm:p-3 lg:p-4 space-y-4 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/30">
             <div ref={chatContainerRef} className="flex-1 min-h-0 flex flex-col-reverse overflow-y-auto pr-1 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
               <div className="space-y-3 pb-2">
                 <AnimatePresence>

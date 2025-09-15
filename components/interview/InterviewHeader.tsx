@@ -62,7 +62,7 @@ export function InterviewHeader({
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 w-full backdrop-blur-lg bg-white/95 border-b border-slate-200 shadow-lg">
-        <div className="max-w-screen-2xl mx-auto px-4 py-4">
+        <div className="max-w-screen-2xl mx-auto px-4 py-2">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <div className="flex items-center gap-4 min-w-0">
               <Tooltip content="Exit Interview" placement="bottom">
@@ -116,14 +116,25 @@ export function InterviewHeader({
 
             <div className="flex items-center gap-3">
               <Tooltip content={isTtsEnabled ? "Disable AI Voice (TTS)" : "Enable AI Voice (TTS)"} placement="bottom">
-                  <Switch
-                     isSelected={isTtsEnabled}
-                     onValueChange={onTtsToggle}
-                     size="sm"
-                     color="primary"
-                     thumbIcon={isTtsEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
-                     aria-label="Toggle Text-to-Speech"
-                  />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" onClick={() => onTtsToggle(!isTtsEnabled)}>
+                  {isTtsEnabled ? (
+                    <Volume2 className="h-4 w-4 text-blue-600" />
+                  ) : (
+                    <VolumeX className="h-4 w-4 text-slate-400" />
+                  )}
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {isTtsEnabled ? "Speaker" : "Muted"}
+                  </span>
+                  <div className={cn(
+                    "w-8 h-4 rounded-full transition-colors relative",
+                    isTtsEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"
+                  )}>
+                    <div className={cn(
+                      "w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform",
+                      isTtsEnabled ? "translate-x-4" : "translate-x-0.5"
+                    )} />
+                  </div>
+                </div>
               </Tooltip>
 
               <Tooltip content="Help & Shortcuts" placement="bottom">
@@ -137,7 +148,7 @@ export function InterviewHeader({
       </header>
       
       {/* Add invisible spacer to prevent content from being hidden under the fixed header */}
-      <div className="h-[72px] w-full"></div>
+      <div className="h-[56px] w-full"></div>
 
       <Modal isOpen={isExitModalOpen} onOpenChange={onExitModalOpenChange} backdrop="blur">
         <ModalContent>

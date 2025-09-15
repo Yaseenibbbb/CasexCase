@@ -1361,16 +1361,6 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                      );
                   })}
                 </AnimatePresence>
-                {interactionState === 'AI_PROCESSING' && (
-                  <div className="flex justify-start max-w-[85%] ml-1 sm:ml-3">
-                     <div className="bg-slate-100 border border-slate-200 rounded-xl shadow-sm p-3">
-                        <div className="flex items-center gap-3">
-                           <Spinner size="sm" color="primary" />
-                           <span className="text-sm text-slate-600 font-medium">AI is thinking...</span>
-                        </div>
-                     </div>
-                  </div> 
-                )}
                 <div ref={messagesEndRef} /> 
               </div>
             </div>

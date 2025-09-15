@@ -452,7 +452,8 @@ export default function InterviewPage() {
           body: JSON.stringify({
             mode: 'interview',
             caseMeta: generatedData.caseMeta || {},
-            userMessage: 'Start the interview with the first message template.'
+            userMessage: 'Start the interview with the first message template.',
+            conversationHistory: [] // Empty history for initial message
           }),
         });
 
@@ -1018,7 +1019,8 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
             body: JSON.stringify({
                 mode: 'interview',
                 caseMeta: caseContext?.caseMeta || caseSession?.generated_case_data?.caseMeta || {},
-                userMessage: userInput
+                userMessage: userInput,
+                conversationHistory: messages.slice(0, -1) // Send all messages except the current user message
             }),
         });
 

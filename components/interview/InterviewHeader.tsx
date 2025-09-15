@@ -61,7 +61,7 @@ export function InterviewHeader({
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-lg bg-white/95 border-b border-slate-200 shadow-lg">
+      <header className="fixed top-0 left-0 right-0 z-40 w-full backdrop-blur-lg bg-white/95 border-b border-slate-200 shadow-lg">
         <div className="max-w-screen-2xl mx-auto px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <div className="flex items-center gap-4 min-w-0">

@@ -36,7 +36,7 @@ const ThemeToggle = () => {
       size="icon"
       variant="ghost"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="rounded-full h-9 w-9 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+      className="rounded-full h-9 w-9 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
     >
       {isDark ? (
         <Sun size={18} className="text-yellow-500" />
@@ -75,13 +75,13 @@ export default function TopNavbar() {
   const { isOpen, toggleSidebar } = useSidebarState()
   
   return (
-    <header className="fixed top-0 left-0 w-full h-16 z-50 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#121420] shadow-sm">
+    <header className="fixed top-0 left-0 w-full h-16 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg shadow-sm">
       <div className="h-full max-w-[1920px] mx-auto flex items-center justify-between px-6">
         {/* Left Side: Logo and Toggle */}
         <div className="flex items-center gap-3">
           <button
             onClick={toggleSidebar}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
             title={isOpen ? "Collapse Sidebar" : "Expand Sidebar"}
             aria-label={isOpen ? "Collapse Sidebar" : "Expand Sidebar"}
           >
@@ -89,12 +89,12 @@ export default function TopNavbar() {
           </button>
           
           <div className="flex items-center gap-1">
-            <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[#7857f7] text-white font-bold text-sm">
+            <div className="flex items-center justify-center w-7 h-7 rounded-md bg-blue-600 text-white font-bold text-sm">
               CC
             </div>
             <Link 
               href="/dashboard" 
-              className="text-lg font-bold text-[#121420] dark:text-white"
+              className="text-lg font-bold text-slate-800 dark:text-white"
             >
               CaseCoach
             </Link>
@@ -113,7 +113,7 @@ export default function TopNavbar() {
         <div className="flex items-center gap-3">
           <Button 
             size="sm"
-            className="rounded-full bg-[#7857f7] hover:bg-[#6344e5] text-white"
+            className="rounded-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             Resume
           </Button>
@@ -121,7 +121,7 @@ export default function TopNavbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-gray-500 dark:text-gray-400 rounded-full h-9 w-9"
+            className="text-slate-500 dark:text-slate-400 rounded-full h-9 w-9"
           >
             <Bell size={20} />
           </Button>
@@ -129,9 +129,9 @@ export default function TopNavbar() {
           <ThemeToggle />
           
           {user && (
-            <Avatar className="h-9 w-9 border-2 border-transparent hover:border-[#7857f7]">
+            <Avatar className="h-9 w-9 border-2 border-transparent hover:border-blue-600">
               <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
-              <AvatarFallback className="bg-gradient-to-br from-[#7857f7] to-[#6344e5] text-white">
+              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-700 text-white">
                 {profile?.full_name?.split(" ").map(name => name[0]).join("") || "U"}
               </AvatarFallback>
             </Avatar>

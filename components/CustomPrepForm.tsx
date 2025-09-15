@@ -325,13 +325,13 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto my-8 bg-cardLight dark:bg-cardDark border border-borderLight dark:border-borderDark rounded-xl shadow-lg overflow-hidden">
-      <div className="p-6 border-b border-borderLight dark:border-borderDark bg-white/50 dark:bg-black/10">
+    <Card className="w-full max-w-3xl mx-auto my-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
         <div className="mb-2 flex justify-between text-sm font-medium text-muted-foreground">
           <span>Step {currentStep} of {STEPS.length}</span>
           <span>{Math.round(progressValue)}% Complete</span>
         </div>
-        <Progress value={progressValue} className="w-full h-1.5 [&>div]:bg-brand" /> 
+        <Progress value={progressValue} className="w-full h-1.5 [&>div]:bg-blue-600" /> 
         <h2 className="text-lg font-semibold text-foreground mt-3">{STEPS[currentStep - 1].title}</h2>
       </div>
       
@@ -350,12 +350,12 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
         </motion.div>
       </CardContent>
 
-      <div className="flex justify-between items-center p-6 border-t border-borderLight dark:border-borderDark bg-slate-50 dark:bg-slate-900/80 rounded-b-xl">
+      <div className="flex justify-between items-center p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 rounded-b-xl">
          <Button
            variant="outline"
            onClick={handleBack}
            disabled={currentStep === 1}
-           className="disabled:opacity-50 rounded-md border-borderLight dark:border-borderDark bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+           className="disabled:opacity-50 rounded-md border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
          >
             <ArrowLeft size={16} className="mr-1" />
             Back
@@ -365,7 +365,7 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
            <Button
             onClick={handleNext}
             disabled={currentStep === 1 && !formData.topic.trim()}
-            className="bg-brand hover:bg-brand/90 text-white rounded-md shadow-sm px-5 disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm px-5 disabled:opacity-50"
            >
              Continue
              <ArrowRight size={16} className="ml-1" />
@@ -398,7 +398,7 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
                 value={formData.topic}
                 onChange={handleInputChange}
                 required
-                className="flex-grow bg-white dark:bg-slate-900 border-borderLight dark:border-borderDark rounded-md focus-visible:ring-brand/50 focus-visible:ring-2"
+                className="flex-grow bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-md focus-visible:ring-blue-600/50 focus-visible:ring-2"
                 disabled={isGeneratingDescription}
               />
               <Button 
@@ -406,7 +406,7 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
                 size="icon"
                 onClick={handleGenerateDescription}
                 title="Generate description with AI" 
-                className="border-borderLight dark:border-borderDark text-brand hover:bg-brand/10 shrink-0 w-9 h-9"
+                className="border-slate-200 dark:border-slate-800 text-blue-600 hover:bg-blue-600/10 shrink-0 w-9 h-9"
                 disabled={isGeneratingDescription || !formData.topic}
               >
                 {isGeneratingDescription ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
@@ -422,7 +422,7 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
                   variant="outline"
                   role="combobox"
                   aria-expanded={companyComboboxOpen}
-                  className="w-full justify-between bg-white dark:bg-slate-900 border-borderLight dark:border-borderDark rounded-md font-normal text-left h-10 text-slate-600 dark:text-slate-300 data-[placeholder]:text-muted-foreground"
+                  className="w-full justify-between bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-md font-normal text-left h-10 text-slate-600 dark:text-slate-300 data-[placeholder]:text-muted-foreground"
                 >
                   <span className="truncate">{formData.companyLabel || "Select company..."}</span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -448,7 +448,7 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
                         ))}
                       </CommandGroup>
                     )}
-                    {!isLoadingCompanies && <CommandItem onSelect={handleAddCustomCompany} className="border-t border-borderLight dark:border-borderDark cursor-pointer text-brand flex items-center gap-2 mt-1 pt-2"><PlusCircle size={16}/>Can't find it? Add custom →</CommandItem>}
+                    {!isLoadingCompanies && <CommandItem onSelect={handleAddCustomCompany} className="border-t border-slate-200 dark:border-slate-800 cursor-pointer text-blue-600 flex items-center gap-2 mt-1 pt-2"><PlusCircle size={16}/>Can't find it? Add custom →</CommandItem>}
                   </CommandList>
                 </Command>
               </PopoverContent>
@@ -457,13 +457,13 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
 
           <div className="space-y-2">
             <Label htmlFor="region">Geographic Focus (Optional)</Label>
-            <Input id="region" name="region" placeholder="e.g., Southeast Asia, USA, Global" value={formData.region} onChange={handleInputChange} className="bg-white dark:bg-slate-900 border-borderLight dark:border-borderDark rounded-md focus-visible:ring-brand/50 focus-visible:ring-2" />
+            <Input id="region" name="region" placeholder="e.g., Southeast Asia, USA, Global" value={formData.region} onChange={handleInputChange} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-md focus-visible:ring-blue-600/50 focus-visible:ring-2" />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="companySize">Company Size (Optional)</Label>
             <Select name="companySize" value={formData.companySize} onValueChange={(value) => handleSelectChange("companySize", value)}>
-              <SelectTrigger id="companySize" className="w-full bg-white dark:bg-slate-900 border-borderLight dark:border-borderDark rounded-md focus-visible:ring-brand/50 focus-visible:ring-2">
+              <SelectTrigger id="companySize" className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-md focus-visible:ring-blue-600/50 focus-visible:ring-2">
                 <SelectValue placeholder="Select size..." />
               </SelectTrigger>
               <SelectContent>
@@ -477,7 +477,7 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
           <div className="space-y-2">
             <Label htmlFor="businessGoal">Business Goal (Optional)</Label>
             <Select name="businessGoal" value={formData.businessGoal} onValueChange={(value) => handleSelectChange("businessGoal", value)}>
-              <SelectTrigger id="businessGoal" className="w-full bg-white dark:bg-slate-900 border-borderLight dark:border-borderDark rounded-md focus-visible:ring-brand/50 focus-visible:ring-2">
+              <SelectTrigger id="businessGoal" className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-md focus-visible:ring-blue-600/50 focus-visible:ring-2">
                 <SelectValue placeholder="Select goal..." />
               </SelectTrigger>
               <SelectContent>
@@ -541,7 +541,7 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
         <div className="space-y-2">
           <Label htmlFor="framework">Preferred Framework (Optional)</Label>
           <Select name="framework" value={formData.framework} onValueChange={(value) => handleSelectChange("framework", value)}>
-            <SelectTrigger id="framework" className="w-full bg-white dark:bg-slate-900 border-borderLight dark:border-borderDark rounded-md focus-visible:ring-brand/50 focus-visible:ring-2">
+            <SelectTrigger id="framework" className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-md focus-visible:ring-blue-600/50 focus-visible:ring-2">
               <SelectValue placeholder="Select a framework..." />
             </SelectTrigger>
             <SelectContent>
@@ -600,14 +600,14 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
             type="file"
             accept=".pdf,.doc,.docx"
             onChange={handleFileChange}
-            className="flex-grow bg-white dark:bg-slate-900 border-borderLight dark:border-borderDark rounded-md file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-brand/10 file:text-brand hover:file:bg-brand/20 cursor-pointer focus-visible:ring-brand/50 focus-visible:ring-2"
+            className="flex-grow bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-md file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600/10 file:text-blue-600 hover:file:bg-blue-600/20 cursor-pointer focus-visible:ring-blue-600/50 focus-visible:ring-2"
           />
           {formData.file && (
               <p className="text-xs text-muted-foreground">Selected: {formData.file.name}</p>
           )}
         </div>
 
-        <div className="flex items-center justify-between rounded-lg border p-4 dark:border-borderDark bg-white dark:bg-slate-900/50">
+        <div className="flex items-center justify-between rounded-lg border p-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50">
           <div className="space-y-0.5">
               <Label htmlFor="liveData">Include Live Data (Simulated)</Label>
               <p className="text-xs text-muted-foreground">Allow the AI to incorporate simulated real-time data points.</p>
@@ -629,7 +629,7 @@ export const CustomPrepForm: React.FC<CustomPrepFormProps> = ({ onClose = () => 
           </RadioGroup>
         </div>
         
-        <div className="space-y-3 rounded-lg border bg-slate-50 dark:bg-slate-900/30 p-4 md:p-6 border-borderLight dark:border-borderDark mt-6">
+        <div className="space-y-3 rounded-lg border bg-slate-50 dark:bg-slate-900/30 p-4 md:p-6 border-slate-200 dark:border-slate-800 mt-6">
           <h3 className="text-base font-semibold text-foreground">Review Your Custom Case Setup</h3>
           <ul className="text-sm text-muted-foreground grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
             <li><strong>Topic:</strong> <span className="text-foreground font-medium truncate block">{formData.topic || "-"}</span></li>

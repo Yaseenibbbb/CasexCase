@@ -69,7 +69,7 @@ export default function DashboardNavbar() {
         isBlurred={false} // Set to false if you prefer the layout below to handle blur/opacity
         maxWidth="full"
         height="4rem" // Default is 4rem (h-16)
-        className="fixed top-0 z-40"
+        className="fixed top-16 z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg"
         classNames={{
             wrapper: "px-4 sm:px-6", // Adjust padding
         }}

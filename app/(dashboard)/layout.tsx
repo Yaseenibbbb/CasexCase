@@ -27,7 +27,7 @@ const MiniBar = ({ active }: { active: boolean }) => {
   if (!active) return null;
   return (
     <span
-      className="absolute inset-y-0 left-0 w-1 bg-[#7857f7] rounded-r-full"
+      className="absolute inset-y-0 left-0 w-1 bg-blue-600 rounded-r-full"
       aria-hidden="true"
     />
   );
@@ -120,12 +120,12 @@ export default function DashboardLayout({
       defaultTheme="dark" 
       enableSystem
     >
-      <div className="flex min-h-screen w-full bg-white dark:bg-[#121420]">
+      <div className="flex min-h-screen w-full bg-slate-50 dark:bg-slate-950">
         <TopNavbar />
         
         <aside 
           className={cn(
-            "fixed left-0 top-16 bottom-0 flex flex-col border-r bg-white dark:bg-[#121420] border-gray-200 dark:border-gray-800 transition-[width] duration-200 ease-in-out z-20",
+            "fixed left-0 top-16 bottom-0 flex flex-col border-r bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-slate-200 dark:border-slate-800 transition-[width] duration-200 ease-in-out z-20",
             open ? EXPANDED_WIDTH : COLLAPSED_WIDTH
           )}
         >
@@ -139,14 +139,14 @@ export default function DashboardLayout({
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200",
                       active
-                        ? "bg-[#7857f7]/10 text-[#7857f7]"
-                        : "text-gray-600 dark:text-gray-400 hover:text-[#121420] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-blue-600/10 text-blue-600"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
                     )}
                   >
                     <Icon
                       className={cn(
                         "h-5 w-5 flex-shrink-0 transition-colors",
-                        active ? "text-[#7857f7]" : "text-gray-500 dark:text-gray-400 group-hover:text-[#7857f7]"
+                        active ? "text-blue-600" : "text-slate-500 dark:text-slate-400 group-hover:text-blue-600"
                       )}
                     />
                     {open && (
@@ -165,10 +165,10 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          <div className="mt-auto border-t border-gray-200 dark:border-gray-800 p-4">
+          <div className="mt-auto border-t border-slate-200 dark:border-slate-800 p-4">
             <button
               onClick={() => signOut()}
-              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hover:text-[#121420] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:ring-2 transition-all duration-200"
+              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-2 transition-all duration-200"
             >
               <LogOut className="h-5 w-5 flex-shrink-0" />
               {open && (
@@ -193,7 +193,7 @@ export default function DashboardLayout({
           
           <main className={cn(
             "flex-1 overflow-y-auto px-4 sm:px-6 py-6",
-            !pathname.startsWith('/interview/') && "pt-4"
+            !pathname.startsWith('/interview/') && "pt-20"
           )}>
             {children}
           </main>

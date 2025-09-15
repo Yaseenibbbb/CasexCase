@@ -1281,7 +1281,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-gradient-to-b from-background to-background/95">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-1 flex-col p-2 sm:p-3 lg:p-4 space-y-4 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/30">
+          <div className="flex flex-[2] flex-col p-2 sm:p-3 lg:p-4 space-y-4 overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/30">
             <div ref={chatContainerRef} className="flex-1 flex flex-col-reverse overflow-y-auto pr-1 scroll-smooth scrollbar-thin scrollbar-thumb-content3 scrollbar-track-content1">
               <div className="space-y-3 pb-2">
                 <AnimatePresence>
@@ -1392,7 +1392,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
         )}
         {/* Right Panel - Conditionally Rendered */}
         {showRightPanel_DEBUG && (
-          <div className="flex flex-col w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-l border-slate-200 p-4 sm:p-5 space-y-4 bg-slate-50/50 backdrop-blur-sm overflow-y-auto flex-1 order-1 lg:order-2">
+          <div className="flex flex-col w-full lg:w-56 border-b lg:border-b-0 lg:border-l border-slate-200 p-3 space-y-3 bg-slate-50/50 backdrop-blur-sm flex-[1] order-1 lg:order-2">
             <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
               <span className="inline-block w-1.5 h-5 bg-blue-500 rounded-sm"></span> 
               Tools & Exhibits
@@ -1400,7 +1400,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
 
             {/* Case Showcase */}
             <Card className="bg-white/90 backdrop-blur-sm shadow-md border border-slate-200 hover:shadow-lg transition-shadow duration-200">
-              <CardBody className="p-4">
+              <CardBody className="p-3">
                 <h3 className="text-lg font-semibold mb-2 text-slate-800 break-words border-l-3 border-blue-500 pl-3">
                   {(() => {
                     // Try to extract title from raw field first
@@ -1427,7 +1427,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                     return title.replace(/^#+\s*/, '');
                   })()}
                 </h3>
-                <div className="text-sm text-slate-700 mb-3 max-h-32 overflow-y-auto break-words whitespace-pre-wrap leading-relaxed">
+                <div className="text-sm text-slate-700 mb-3 break-words whitespace-pre-wrap leading-relaxed">
                   {(() => {
                     // Try to get case description from multiple sources
                     const caseData = caseSession?.generated_case_data;
@@ -1540,7 +1540,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
             </Card>
 
             {/* Progress Meter */}
-            <div className="bg-white/90 backdrop-blur-sm shadow-md border border-slate-200 rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
+            <div className="bg-white/90 backdrop-blur-sm shadow-md border border-slate-200 rounded-lg p-3 hover:shadow-lg transition-shadow duration-200">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-semibold text-slate-700">Progress</h3>
                 <span className="text-sm font-bold text-blue-600">{Math.round(progressPercent)}%</span>
@@ -1552,7 +1552,7 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
 
             {/* Tool Buttons */}
             <div className="mt-auto pt-2">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="col-span-2 mb-2">
                   <h3 className="text-sm font-semibold text-slate-700 mb-2">Interview Tools</h3>
                 </div>

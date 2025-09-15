@@ -722,7 +722,9 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [messages])
 
   // Simulate network connection status
@@ -1332,46 +1334,50 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-gradient-to-b from-background to-background/95">
         {/* Left Panel (Chat Area) - Conditionally Rendered */}
         {showLeftPanel_DEBUG && (
-          <div className="flex flex-[2] flex-col overflow-hidden order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/20 min-h-0">
-            <div ref={chatContainerRef} className="flex-1 flex flex-col-reverse overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 min-h-0">
-              <div className="p-4 space-y-1 min-h-0">
-                <AnimatePresence>
-                  {messages.map((message, index) => {
-                     const exhibitData = message.exhibitId ? exhibits.find(ex => ex.id === message.exhibitId) : null;
-                     const previousMessage = messages[index - 1];
-                     const showLabel = index === 0 || message.role !== previousMessage?.role; 
-                     // Find the last user message before this one
-                     let lastUserMsg = null;
-                     for (let i = index - 1; i >= 0; i--) {
-                       if (messages[i].role === 'user') {
-                         lastUserMsg = messages[i].content;
-                         break;
+          <div className="flex flex-[2] flex-col order-2 lg:order-1 border-t lg:border-t-0 lg:border-r border-slate-200 bg-slate-50/20 h-full">
+            {/* Chat Messages Area - Fixed Height */}
+            <div className="flex-1 overflow-hidden">
+              <div ref={chatContainerRef} className="h-full overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+                <div className="p-4 space-y-4">
+                  <AnimatePresence>
+                    {messages.map((message, index) => {
+                       const exhibitData = message.exhibitId ? exhibits.find(ex => ex.id === message.exhibitId) : null;
+                       const previousMessage = messages[index - 1];
+                       const showLabel = index === 0 || message.role !== previousMessage?.role; 
+                       // Find the last user message before this one
+                       let lastUserMsg = null;
+                       for (let i = index - 1; i >= 0; i--) {
+                         if (messages[i].role === 'user') {
+                           lastUserMsg = messages[i].content;
+                           break;
+                         }
                        }
-                     }
-                     // Only show exhibit if this is an assistant message and the last user message requested/struggled
-                     const shouldShowExhibit = message.role === 'assistant' && lastUserMsg && userRequestsExhibit(lastUserMsg, messages);
-                     return (
-                       <motion.div key={message.id || index} 
-                         initial={{ opacity: 0, y: 10 }} 
-                         animate={{ opacity: 1, y: 0 }} 
-                         exit={{ opacity: 0, transition: { duration: 0.2 } }} 
-                         layout
-                         className={message.role === "assistant" ? "ml-0 mr-10 sm:ml-2 sm:mr-16" : "ml-10 mr-0 sm:ml-16 sm:mr-2"}
-                       >
-                         <ChatMessage
-                           message={message} 
-                           exhibitData={shouldShowExhibit ? exhibitData : null} 
-                           showLabel={showLabel} 
-                           onExhibitClick={() => handleExhibitClick(message.exhibitId)} 
-                         />
-                       </motion.div>
-                     );
-                  })}
-                </AnimatePresence>
-                <div ref={messagesEndRef} /> 
+                       // Only show exhibit if this is an assistant message and the last user message requested/struggled
+                       const shouldShowExhibit = message.role === 'assistant' && lastUserMsg && userRequestsExhibit(lastUserMsg, messages);
+                       return (
+                         <motion.div key={message.id || index} 
+                           initial={{ opacity: 0, y: 10 }} 
+                           animate={{ opacity: 1, y: 0 }} 
+                           exit={{ opacity: 0, transition: { duration: 0.2 } }} 
+                           layout
+                           className={message.role === "assistant" ? "ml-0 mr-10 sm:ml-2 sm:mr-16" : "ml-10 mr-0 sm:ml-16 sm:mr-2"}
+                         >
+                           <ChatMessage
+                             message={message} 
+                             exhibitData={shouldShowExhibit ? exhibitData : null} 
+                             showLabel={showLabel} 
+                             onExhibitClick={() => handleExhibitClick(message.exhibitId)} 
+                           />
+                         </motion.div>
+                       );
+                    })}
+                  </AnimatePresence>
+                  <div ref={messagesEndRef} /> 
+                </div>
               </div>
             </div>
-            {/* Input Area - Fixed Height */}
+            
+            {/* Input Area - Fixed Height at Bottom */}
             <div className="bg-white border-t border-slate-200 flex-shrink-0">
               {/* Recording Indicator */}
               {isRecording && ( 
@@ -1383,27 +1389,34 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
               
               {/* Input Container - Fixed Height */}
               <div className="p-4">
-                <div className="flex items-end gap-3 max-h-32">
-                  {/* Text Input - Constrained */}
-                  <div className="flex-1 relative min-h-0">
-                    <Textarea
-                      ref={inputRef} 
-                      placeholder={
-                        interactionState === 'AI_PROCESSING' ? "Wait for AI response..." :
-                        interactionState === 'AI_SPEAKING' ? "AI is speaking..." :
-                        interactionState === 'USER_RECORDING' ? "Recording audio..." :
-                        "Type your response or question..."
-                      }
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      minRows={1}
-                      maxRows={3} 
-                      variant="bordered"
-                      className="resize-none text-sm rounded-xl border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm min-h-[40px] max-h-[80px]"
-                      isDisabled={(interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'IDLE'} 
-                      aria-label="Chat input"
-                    />
+                <div className="flex items-end gap-3">
+                  {/* Text Input - Properly Constrained */}
+                  <div className="flex-1 relative">
+                    <div className="relative">
+                      <Textarea
+                        ref={inputRef} 
+                        placeholder={
+                          interactionState === 'AI_PROCESSING' ? "Wait for AI response..." :
+                          interactionState === 'AI_SPEAKING' ? "AI is speaking..." :
+                          interactionState === 'USER_RECORDING' ? "Recording audio..." :
+                          "Type your response or question..."
+                        }
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        minRows={1}
+                        maxRows={3} 
+                        variant="bordered"
+                        className="resize-none text-sm rounded-xl border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm"
+                        style={{ 
+                          minHeight: '40px', 
+                          maxHeight: '80px',
+                          height: 'auto'
+                        }}
+                        isDisabled={(interactionState as InteractionState) !== 'USER_TURN' && (interactionState as InteractionState) !== 'IDLE'} 
+                        aria-label="Chat input"
+                      />
+                    </div>
                   </div>
                   
                   {/* Action Buttons - Fixed Size */}

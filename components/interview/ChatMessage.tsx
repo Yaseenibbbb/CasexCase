@@ -23,6 +23,11 @@ interface ChatMessageProps {
 export function ChatMessage({ message, exhibitData, showLabel, onExhibitClick }: ChatMessageProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const isAI = message.role === "assistant"
+  
+  // Don't render empty messages
+  if (!message.content || message.content.trim().length === 0) {
+    return null
+  }
 
   const formattedTime = new Date(message.timestamp).toLocaleTimeString([], {
     hour: "2-digit",

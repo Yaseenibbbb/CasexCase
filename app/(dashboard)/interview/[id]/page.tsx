@@ -1043,17 +1043,20 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
             const currentExhibitId = newExhibits.length > 0 ? newExhibits[0].id : null; 
 
             const messageId = Date.now(); // Generate ID once
-            const aiResponseMessage = {
-                id: messageId,
-                role: "assistant" as const,
-                content: "", // Start empty
-                timestamp: new Date().toISOString(),
-                hasExhibit: newExhibits.length > 0,
-                exhibitId: currentExhibitId, // Assign the ID here
-                isEnd: data.isEnd || false, 
-            };
-            // Add the empty message object
-            setMessages(prevMessages => [...prevMessages, aiResponseMessage]);
+            
+            // Only add message if we have content
+            if (cleanProse && cleanProse.trim().length > 0) {
+                const aiResponseMessage = {
+                    id: messageId,
+                    role: "assistant" as const,
+                    content: cleanProse,
+                    timestamp: new Date().toISOString(),
+                    hasExhibit: newExhibits.length > 0,
+                    exhibitId: currentExhibitId, // Assign the ID here
+                    isEnd: data.isEnd || false, 
+                };
+                setMessages(prevMessages => [...prevMessages, aiResponseMessage]);
+            }
 
             // Handle exhibits separately
             if (newExhibits.length > 0) {
@@ -1117,16 +1120,20 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                     const currentExhibitId = newExhibits.length > 0 ? newExhibits[0].id : null; 
 
                     const messageId = Date.now();
-                    const aiResponseMessage = {
-                        id: messageId,
-                        role: "assistant" as const,
-                        content: "",
-                        timestamp: new Date().toISOString(),
-                        hasExhibit: newExhibits.length > 0,
-                        exhibitId: currentExhibitId,
-                        isEnd: fallbackData.isEnd || false, 
-                    };
-                    setMessages(prevMessages => [...prevMessages, aiResponseMessage]);
+                    
+                    // Only add message if we have content
+                    if (cleanProse && cleanProse.trim().length > 0) {
+                        const aiResponseMessage = {
+                            id: messageId,
+                            role: "assistant" as const,
+                            content: cleanProse,
+                            timestamp: new Date().toISOString(),
+                            hasExhibit: newExhibits.length > 0,
+                            exhibitId: currentExhibitId,
+                            isEnd: fallbackData.isEnd || false, 
+                        };
+                        setMessages(prevMessages => [...prevMessages, aiResponseMessage]);
+                    }
 
                     if (newExhibits.length > 0) {
                         setExhibits(prevExhibits => [...prevExhibits, ...newExhibits]);

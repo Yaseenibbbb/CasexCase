@@ -90,7 +90,34 @@ export function ChatMessage({ message, exhibitData, showLabel, onExhibitClick }:
             "text-sm leading-relaxed whitespace-pre-wrap",
             isAI ? "text-slate-800" : "text-slate-800"
           )}>
-            {message.content}
+            {message.content.split('\n').map((line, index) => {
+              // Handle structured text with colons (like "Customer needs: ...")
+              if (line.includes(':') && line.length > 0) {
+                const [label, ...contentParts] = line.split(':');
+                const content = contentParts.join(':').trim();
+                return (
+                  <div key={index} className="mb-2">
+                    <span className="font-semibold text-slate-700">{label.trim()}:</span>
+                    <span className="ml-1">{content}</span>
+                  </div>
+                );
+              }
+              // Handle bullet points
+              if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
+                return (
+                  <div key={index} className="ml-4 mb-1">
+                    <span className="text-slate-600">•</span>
+                    <span className="ml-2">{line.trim().substring(1).trim()}</span>
+                  </div>
+                );
+              }
+              // Regular text
+              return line.length > 0 ? (
+                <div key={index} className="mb-1">{line}</div>
+              ) : (
+                <div key={index} className="mb-2"></div>
+              );
+            })}
           </div>
 
           {/* Exhibit Preview */}

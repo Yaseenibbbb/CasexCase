@@ -100,6 +100,7 @@ export default function InterviewPage() {
       .replace(/Global Healthcare Financial Diagnostic/gi, 'MediCare Partners')
       .replace(/Go-No-Go Decision/gi, 'TechVenture Inc.')
       .replace(/Energy Sector/gi, 'Energy Solutions Group')
+      .replace(/Diagnostic Case in Technology Industry/gi, 'TechVenture Inc.')
       // Remove formatting symbols
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')
@@ -112,6 +113,49 @@ export default function InterviewPage() {
       .replace(/\n\s*\n/g, '\n')
       .replace(/\s+/g, ' ')
       .trim();
+  };
+
+  // --- Helper Functions for Natural Case Introductions ---
+  const getRealisticCompanyName = (industry?: string): string => {
+    const companies = {
+      'healthcare': 'MediCare Partners',
+      'technology': 'TechVenture Inc.',
+      'finance': 'Global Finance Corp',
+      'retail': 'RetailMax Solutions',
+      'manufacturing': 'Industrial Dynamics',
+      'energy': 'Energy Solutions Group',
+      'consulting': 'Strategic Partners LLC',
+      'default': 'Business Solutions Inc.'
+    };
+    return companies[industry?.toLowerCase() as keyof typeof companies] || companies.default;
+  };
+
+  const getIndustryDescription = (industry?: string): string => {
+    const descriptions = {
+      'healthcare': 'a major healthcare organization',
+      'technology': 'a growing technology company',
+      'finance': 'a financial services firm',
+      'retail': 'a retail chain',
+      'manufacturing': 'a manufacturing company',
+      'energy': 'an energy company',
+      'consulting': 'a consulting firm',
+      'default': 'a client company'
+    };
+    return descriptions[industry?.toLowerCase() as keyof typeof descriptions] || descriptions.default;
+  };
+
+  const getCaseSituation = (industry?: string): string => {
+    const situations = {
+      'healthcare': 'They\'re facing significant financial challenges and need strategic recommendations to improve their operations.',
+      'technology': 'They\'re considering a major strategic decision and need help evaluating their options.',
+      'finance': 'They\'re dealing with market challenges and need to reassess their strategy.',
+      'retail': 'They\'re experiencing competitive pressures and need to find new growth opportunities.',
+      'manufacturing': 'They\'re facing operational challenges and need to optimize their processes.',
+      'energy': 'They\'re dealing with market changes and need strategic guidance.',
+      'consulting': 'They\'re facing business challenges and need strategic recommendations.',
+      'default': 'They\'re facing some strategic challenges and need your help analyzing the situation.'
+    };
+    return situations[industry?.toLowerCase() as keyof typeof situations] || situations.default;
   };
   // -------------------------------------
 
@@ -419,76 +463,57 @@ export default function InterviewPage() {
       
       // Check for new CaseByCase structure first
       if (generatedData?.sections?.interviewerScript) {
-        // Extract opening prompt from interviewer script
-        const scriptMatch = generatedData.sections.interviewerScript.match(/\*\*Opening Prompt[^*]*\*\*:?\s*([^*]+)/i);
-        if (scriptMatch) {
-          initialPresentationText = scriptMatch[1].trim();
-        } else {
-          // If no specific opening prompt found, use the first paragraph or the whole script
-          const firstParagraph = generatedData.sections.interviewerScript.split('\n')[0];
-          initialPresentationText = firstParagraph || generatedData.sections.interviewerScript;
-        }
-        
-        // Add full case details to the presentation (TTS-friendly)
-        const caseTitle = generatedData.caseMeta?.title || 'Case Study';
+        // Create natural human-like introduction
+        const companyName = generatedData.caseMeta?.company || getRealisticCompanyName(generatedData.caseMeta?.industry);
+        const industry = generatedData.caseMeta?.industry || 'business';
         const background = generatedData.sections?.background || '';
-        const objectives = generatedData.sections?.objectives || '';
-        const tasks = generatedData.sections?.tasks || '';
         
-        // Create comprehensive case presentation (TTS-friendly, no markdown)
-        let fullCasePresentation = initialPresentationText;
-        
-        if (caseTitle) {
-          fullCasePresentation += `\n\n${caseTitle}`;
-        }
-        
+        initialPresentationText = `Welcome to your case interview practice session! I'm your interviewer today.
+
+Let's begin with our case which involves ${companyName}, ${getIndustryDescription(industry)}. ${getCaseSituation(industry)}`;
+
         if (background) {
-          fullCasePresentation += `\n\nBackground: ${background}`;
+          initialPresentationText += ` Here's the situation: ${background}`;
         }
         
-        if (objectives) {
-          fullCasePresentation += `\n\nObjectives: ${objectives}`;
-        }
+        initialPresentationText += ` Before we dive deep, I'd like to understand your initial thoughts. How would you approach this problem? What key areas do you think we should explore?`;
         
-        if (tasks) {
-          fullCasePresentation += `\n\nYour Task: ${tasks}`;
-        }
-        
-        initialPresentationText = fullCasePresentation;
         initialExhibits = generatedData?.exhibits || [];
       } else if (generatedData?.caseFacts?.initialPresentationText) {
-        // Fallback to old structure
-        initialPresentationText = generatedData.caseFacts.initialPresentationText;
+        // Fallback to old structure - clean it up
+        const companyName = getRealisticCompanyName(generatedData.caseMeta?.industry);
+        const industry = generatedData.caseMeta?.industry || 'business';
+        
+        initialPresentationText = `Welcome to your case interview practice session! I'm your interviewer today.
+
+Let's begin with our case which involves ${companyName}, ${getIndustryDescription(industry)}. ${getCaseSituation(industry)} Before we dive deep, I'd like to understand your initial thoughts. How would you approach this problem? What key areas do you think we should explore?`;
+        
         initialExhibits = generatedData?.exhibits || [];
       } else if (generatedData?.caseMeta) {
         // Handle demo mode structure - create a proper opening based on case data
-        const caseTitle = generatedData.caseMeta.title || 'this case study';
+        const companyName = getRealisticCompanyName(generatedData.caseMeta.industry);
         const industry = generatedData.caseMeta.industry || 'business';
-        const company = generatedData.caseMeta.company || 'the client';
         const background = generatedData.sections?.background || '';
-        const tasks = generatedData.sections?.tasks || '';
         
-        let fullCasePresentation = `Hello! Great to meet you today. I'd like you to help our client, ${company || 'Business Solutions Inc.'}, ${industry ? `a ${industry} company` : 'a client company'}. They're facing some strategic challenges and need your help analyzing the situation.`;
+        initialPresentationText = `Welcome to your case interview practice session! I'm your interviewer today.
+
+Let's begin with our case which involves ${companyName}, ${getIndustryDescription(industry)}. ${getCaseSituation(industry)}`;
         
         if (background) {
-          fullCasePresentation += ` Here's the situation: ${background}`;
+          initialPresentationText += ` Here's the situation: ${background}`;
         }
         
-        if (tasks) {
-          fullCasePresentation += ` ${tasks}`;
-        }
+        initialPresentationText += ` Before we dive deep, I'd like to understand your initial thoughts. How would you approach this problem? What key areas do you think we should explore?`;
         
-        fullCasePresentation += ` What are your initial thoughts on how to approach this challenge?`;
-        
-        initialPresentationText = fullCasePresentation;
         initialExhibits = generatedData?.exhibits || [];
       }
 
       if (!initialPresentationText) {
          console.error("[TRIGGER_INIT] Could not find initialPresentationText in generated_case_data:", generatedData);
          // Create a fallback presentation text instead of throwing error
-         const caseType = loadedCaseType?.title || "this case";
-         const fallbackText = `Hello! Great to meet you today. I'd like you to help our client, Business Solutions Inc., a client company. They're facing some strategic challenges and need your help analyzing the situation. What are your initial thoughts on how to approach this challenge?`;
+         const fallbackText = `Welcome to your case interview practice session! I'm your interviewer today.
+
+Let's begin with our case which involves Business Solutions Inc., a client company. They're facing some strategic challenges and need your help analyzing the situation. Before we dive deep, I'd like to understand your initial thoughts. How would you approach this problem? What key areas do you think we should explore?`;
          console.log("[TRIGGER_INIT] Using fallback presentation text:", fallbackText);
          
          // Update state with fallback

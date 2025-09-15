@@ -47,7 +47,9 @@ EXHIBIT FORMAT (exact):
 [[EXHIBIT:IMAGE|id=E#|title="..."|url="https://..."]][[/EXHIBIT]]
 
 FIRST MESSAGE TEMPLATE:
-"Hello! Great to meet you today. I'd like you to help our client, ${meta.company || getRealisticCompanyName(meta.industry)}, ${getIndustryDescription(meta.industry)}. ${getCaseSituation(meta.industry)} What are your initial thoughts on how to approach this challenge?" <END_TURN>
+"Welcome to your case interview practice session! I'm your interviewer today.
+
+Let's begin with our case which involves ${meta.company || getRealisticCompanyName(meta.industry)}, ${getIndustryDescription(meta.industry)}. ${getCaseSituation(meta.industry)} Before we dive deep, I'd like to understand your initial thoughts. How would you approach this problem? What key areas do you think we should explore?" <END_TURN>
 `.trim();
 
 // Helper functions for natural case introductions

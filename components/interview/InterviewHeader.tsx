@@ -147,8 +147,6 @@ export function InterviewHeader({
         </div>
       </header>
       
-      {/* Add invisible spacer to prevent content from being hidden under the fixed header */}
-      <div className="h-[48px] w-full"></div>
 
       <Modal isOpen={isExitModalOpen} onOpenChange={onExitModalOpenChange} backdrop="blur">
         <ModalContent>

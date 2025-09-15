@@ -50,21 +50,34 @@ export function SignInForm() {
   // Handle form submission
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
-    const { error } = await signIn(values.email, values.password)
-    setIsSubmitting(false)
-
-    if (error) {
+    try {
+      console.log("[SignInForm] Attempting sign-in with email:", values.email);
+      const { error } = await signIn(values.email, values.password)
+      
+      if (error) {
+        console.error("[SignInForm] Sign-in error:", error);
+        toast({
+          title: "Sign In Failed",
+          description: error.message || "An unexpected error occurred.",
+          variant: "destructive",
+        })
+      } else {
+        console.log("[SignInForm] Sign-in successful, redirecting...");
+        toast({
+          title: "Signed In Successfully",
+          description: "Redirecting to your dashboard...",
+        })
+        router.push("/dashboard")
+      }
+    } catch (err: any) {
+      console.error("[SignInForm] Sign-in exception:", err);
       toast({
         title: "Sign In Failed",
-        description: error.message || "An unexpected error occurred.",
+        description: err?.message || "An unexpected error occurred.",
         variant: "destructive",
       })
-    } else {
-      toast({
-        title: "Signed In Successfully",
-        description: "Redirecting to your dashboard...",
-      })
-      router.push("/dashboard")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 

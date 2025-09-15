@@ -272,19 +272,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      // Clear any demo mode data first
+      clearAuthStorage();
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (!error && data.user) {
+      if (error) {
+        console.error("[AuthSync] Sign-in error:", error);
+        return { error };
+      }
+      
+      if (data.user && data.session) {
+        console.log("[AuthSync] Sign-in successful, setting user and session");
         setSession(data.session);
         setUser(data.user);
         saveToStorage(SESSION_STORAGE_KEYS.USER_ID, data.user.id);
-        await syncProfileIfNeeded(data.user.id);
+        
+        // Sync profile and handle any errors
+        try {
+          await syncProfileIfNeeded(data.user.id);
+        } catch (profileError) {
+          console.error("[AuthSync] Profile sync error:", profileError);
+          // Don't fail the sign-in if profile sync fails
+        }
       }
       
-      return { error };
+      return { error: null };
+    } catch (err) {
+      console.error("[AuthSync] Sign-in exception:", err);
+      return { error: err };
     } finally {
       setIsLoading(false);
     }

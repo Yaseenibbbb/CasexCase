@@ -73,6 +73,7 @@ export default function InterviewPage() {
   const [sessionVoiceId, setSessionVoiceId] = useState<string | null>(null)
   const [caseContext, setCaseContext] = useState<any>(null) // Store structured case data for AI context
   const [hasTriggeredInitialMessage, setHasTriggeredInitialMessage] = useState(false) // Track if initial message was triggered
+  const initialMessageTriggeredRef = useRef(false) // Additional safeguard to prevent multiple triggers
   
   // --- Add state for conditional rendering (to replace comments) ---
   const [showLeftPanel_DEBUG, setShowLeftPanel_DEBUG] = useState(true); 
@@ -367,10 +368,11 @@ export default function InterviewPage() {
         }
         
         // Initialize messages if empty - always trigger initial AI message
-        if (!messages.length && !hasTriggeredInitialMessage && sessionData.case_type && sessionData.generated_case_data) {
+        if (!messages.length && !hasTriggeredInitialMessage && !initialMessageTriggeredRef.current && sessionData.case_type && sessionData.generated_case_data) {
           const caseType = CASE_TYPES.find(type => type.id === sessionData.case_type);
           if (caseType) {
             console.log("[Interview] Triggering initial AI message for case type:", caseType.id);
+            initialMessageTriggeredRef.current = true; // Set ref first to prevent race conditions
             setHasTriggeredInitialMessage(true);
             await triggerInitialAIMessage(caseType, sessionData.generated_case_data);
           }
@@ -391,11 +393,17 @@ export default function InterviewPage() {
       initialLoadTriggeredRef.current = true;
       initializeInterview();
     }
-  }, [id, hasTriggeredInitialMessage]);
+  }, [id]);
 
   // *** Modify function signature to accept generatedData ***
   const triggerInitialAIMessage = async (loadedCaseType: CaseType, generatedData: any) => {
     console.log(`[TRIGGER_INIT] Entered triggerInitialAIMessage for case type: ${loadedCaseType.id}`);
+    
+    // Double-check that we haven't already triggered this
+    if (initialMessageTriggeredRef.current && hasTriggeredInitialMessage) {
+      console.log(`[TRIGGER_INIT] Already triggered, skipping...`);
+      return;
+    }
 
     setInteractionState('AI_PROCESSING'); // Briefly show processing while we set up
 
@@ -442,7 +450,14 @@ export default function InterviewPage() {
             isEnd: false
           };
 
-          setMessages([initialMessage]);
+          // Only set messages if we don't already have any
+          setMessages(prevMessages => {
+            if (prevMessages.length > 0) {
+              console.log(`[TRIGGER_INIT] Messages already exist, not overwriting`);
+              return prevMessages;
+            }
+            return [initialMessage];
+          });
           
           // Start TTS for the initial presentation
           if (isTtsEnabled && initialMessage.content) {
@@ -529,7 +544,14 @@ Let's begin with our case which involves Business Solutions Inc., a client compa
                exhibitId: null,
                isEnd: false,
             };
-            setMessages([fallbackMessage]);
+            // Only set messages if we don't already have any
+            setMessages(prevMessages => {
+              if (prevMessages.length > 0) {
+                console.log(`[TRIGGER_INIT] Messages already exist in fallback, not overwriting`);
+                return prevMessages;
+              }
+              return [fallbackMessage];
+            });
             setInteractionState('USER_TURN');
          }
          return; // Exit function after handling fallback
